@@ -17,9 +17,18 @@
 <meta property="og:type" content="website">
 
 <!-- React + Babel for in-browser JSX (no build step needed for testing) -->
-<script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.23.5/babel.min.js"></script>
+<script>
+  // Show loading message while Babel compiles
+  window.addEventListener('DOMContentLoaded', function() {
+    var root = document.getElementById('root');
+    if (root && !root.innerHTML) {
+      root.innerHTML = '<div style="font-family:Georgia,serif;text-align:center;padding:60px 20px;color:#6b8f71"><svg width="48" height="48" viewBox="0 0 48 48" fill="none" style="margin:0 auto 16px;display:block"><circle cx="24" cy="22" r="8.5" stroke="#2d5a35" stroke-width="1.4" fill="none"/><circle cx="24" cy="13.5" r="8.5" stroke="#2d5a35" stroke-width="1.4" fill="none"/><circle cx="24" cy="30.5" r="8.5" stroke="#2d5a35" stroke-width="1.4" fill="none"/><circle cx="15.5" cy="22" r="8.5" stroke="#2d5a35" stroke-width="1.4" fill="none"/><circle cx="32.5" cy="22" r="8.5" stroke="#2d5a35" stroke-width="1.4" fill="none"/><circle cx="24" cy="22" r="2.8" fill="#2d5a35"/><line x1="24" y1="42" x2="24" y2="37" stroke="#2d5a35" stroke-width="1.4" stroke-linecap="round"/><path d="M24 39.5 Q20 37.5 19.5 34.5 Q22 35.5 24 37.5" fill="#2d5a35" opacity="0.75"/><path d="M24 39.5 Q28 37.5 28.5 34.5 Q26 35.5 24 37.5" fill="#2d5a35" opacity="0.75"/></svg><div style="font-size:18px;font-weight:300">Loading Fruitful…</div><div style="font-size:13px;color:#a8998a;margin-top:8px">Walk in the Spirit</div></div>';
+    }
+  });
+</script>
 
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
