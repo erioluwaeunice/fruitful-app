@@ -1,0 +1,18 @@
+{
+  "name": "Fruitful — Walk in the Spirit",
+  "short_name": "Fruitful",
+  "description": "Daily accountability rooted in the fruits of the Spirit",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7f4ef",
+  "theme_color": "#f7f4ef",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

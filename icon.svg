@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Background -->
+  <rect width="512" height="512" rx="110" fill="#f7f4ef"/>
+  
+  <!-- Interlocking circles -->
+  <circle cx="256" cy="224" r="110" fill="none" stroke="#2d5a35" stroke-width="12"/>
+  <circle cx="256" cy="114" r="110" fill="none" stroke="#2d5a35" stroke-width="12"/>
+  <circle cx="256" cy="334" r="110" fill="none" stroke="#2d5a35" stroke-width="12"/>
+  <circle cx="146" cy="224" r="110" fill="none" stroke="#2d5a35" stroke-width="12"/>
+  <circle cx="366" cy="224" r="110" fill="none" stroke="#2d5a35" stroke-width="12"/>
+  
+  <!-- Vertical vesica -->
+  <path d="M256 118 C292 148 307 186 307 224 C307 262 292 300 256 330 C220 300 205 262 205 224 C205 186 220 148 256 118Z" fill="#2d5a35" opacity="0.14"/>
+  <!-- Horizontal vesica -->
+  <path d="M152 224 C182 188 220 173 256 173 C292 173 330 188 360 224 C330 260 292 275 256 275 C220 275 182 260 152 224Z" fill="#2d5a35" opacity="0.14"/>
+  
+  <!-- Centre dot -->
+  <circle cx="256" cy="224" r="22" fill="#2d5a35"/>
+  
+  <!-- Stem -->
+  <line x1="256" y1="430" x2="256" y2="378" stroke="#2d5a35" stroke-width="12" stroke-linecap="round"/>
+  
+  <!-- Left leaf -->
+  <path d="M256 408 Q218 390 214 358 Q238 366 256 388" fill="#2d5a35" opacity="0.8"/>
+  <!-- Right leaf -->
+  <path d="M256 408 Q294 390 298 358 Q274 366 256 388" fill="#2d5a35" opacity="0.8"/>
+</svg>

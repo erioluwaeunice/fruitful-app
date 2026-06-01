@@ -1,0 +1,1418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Fruitful">
+<meta name="theme-color" content="#f7f4ef">
+<meta name="description" content="A daily accountability app rooted in the fruits of the Spirit">
+<title>Fruitful — Walk in the Spirit</title>
+<link rel="manifest" href="manifest.json">
+
+<!-- Open Graph for sharing -->
+<meta property="og:title" content="Fruitful — Walk in the Spirit">
+<meta property="og:description" content="Daily accountability rooted in love, joy, peace, patience, kindness, goodness, faithfulness, gentleness, and self-control.">
+<meta property="og:type" content="website">
+
+<!-- React + Babel for in-browser JSX (no build step needed for testing) -->
+<script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; background: #f7f4ef; font-family: Georgia, serif; overscroll-behavior: none; }
+  #root { height: 100%; max-width: 480px; margin: 0 auto; }
+  @keyframes dot { 0%,80%,100%{transform:scale(.6);opacity:.3} 40%{transform:scale(1);opacity:1} }
+  @keyframes slideUp { from{transform:translateY(100%)} to{transform:none} }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:none} }
+  @keyframes barLoad { from{width:0} to{width:100%} }
+  @keyframes breathe { 0%,100%{transform:scale(1);opacity:.85} 50%{transform:scale(1.05);opacity:1} }
+  textarea:focus, input:focus, select:focus { border-color: #6b8f71 !important; outline: none; }
+  ::-webkit-scrollbar { width: 0; }
+  button { font-family: Georgia, serif; }
+  input, select, textarea { font-family: Georgia, serif; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script id="app" type="text/babel">
+const { useState, useEffect, useCallback, useRef } = React;
+const { useState, useEffect, useCallback, useRef } = React;
+const FRUITS = [
+  { name:"Love",        icon:"love",        ref:"1 Cor 13:4",  q:"Did I choose love over convenience?",    scripture:"Love suffers long and is kind; love does not envy; love does not parade itself, is not puffed up. — 1 Corinthians 13:4 (NKJV)" },
+  { name:"Joy",         icon:"joy",         ref:"Neh 8:10",    q:"Did I carry joy even in difficulty?",    scripture:"The joy of the Lord is your strength. — Nehemiah 8:10 (NKJV)" },
+  { name:"Peace",       icon:"peace",       ref:"Phil 4:7",    q:"Did I guard my peace today?",            scripture:"And the peace of God, which surpasses all understanding, will guard your hearts and minds through Christ Jesus. — Philippians 4:7 (NKJV)" },
+  { name:"Patience",    icon:"patience",    ref:"James 1:4",   q:"Did I wait with grace?",                 scripture:"But let patience have its perfect work, that you may be perfect and complete, lacking nothing. — James 1:4 (NKJV)" },
+  { name:"Kindness",    icon:"kindness",    ref:"Eph 4:32",    q:"Did I go out of my way for someone?",    scripture:"And be kind to one another, tenderhearted, forgiving one another, even as God in Christ forgave you. — Ephesians 4:32 (NKJV)" },
+  { name:"Goodness",    icon:"goodness",    ref:"Ps 23:6",     q:"Did I act with integrity unseen?",       scripture:"Surely goodness and mercy shall follow me all the days of my life; and I will dwell in the house of the Lord forever. — Psalm 23:6 (NKJV)" },
+  { name:"Faithfulness",icon:"faithfulness",ref:"Lam 3:23",    q:"Did I follow through on commitments?",   scripture:"They are new every morning; great is Your faithfulness. — Lamentations 3:23 (NKJV)" },
+  { name:"Gentleness",  icon:"gentleness",  ref:"Prov 15:1",   q:"Did I respond softly when I could?",     scripture:"A soft answer turns away wrath, but a harsh word stirs up anger. — Proverbs 15:1 (NKJV)" },
+  { name:"Self-control",icon:"selfcontrol", ref:"1 Cor 9:25",  q:"Did I choose discipline over impulse?",  scripture:"And everyone who competes for the prize is temperate in all things. — 1 Corinthians 9:25 (NKJV)" },
+];
+
+const VERSES = [
+  { t:"But the fruit of the Spirit is love, joy, peace, longsuffering, kindness, goodness, faithfulness, gentleness, self-control. Against such there is no law.", r:"Galatians 5:22–23 (NKJV)" },
+  { t:"Walk in the Spirit, and you shall not fulfill the lust of the flesh.", r:"Galatians 5:16 (NKJV)" },
+  { t:"The joy of the Lord is your strength.", r:"Nehemiah 8:10 (NKJV)" },
+  { t:"And the peace of God, which surpasses all understanding, will guard your hearts and minds through Christ Jesus.", r:"Philippians 4:7 (NKJV)" },
+  { t:"Love suffers long and is kind; love does not envy; love does not parade itself, is not puffed up.", r:"1 Corinthians 13:4 (NKJV)" },
+  { t:"And be kind to one another, tenderhearted, forgiving one another, even as God in Christ forgave you.", r:"Ephesians 4:32 (NKJV)" },
+  { t:"Through the Lord's mercies we are not consumed, because His compassions fail not. They are new every morning; great is Your faithfulness.", r:"Lamentations 3:22–23 (NKJV)" },
+  { t:"A soft answer turns away wrath, but a harsh word stirs up anger.", r:"Proverbs 15:1 (NKJV)" },
+  { t:"Be anxious for nothing, but in everything by prayer and supplication, with thanksgiving, let your requests be made known to God.", r:"Philippians 4:6 (NKJV)" },
+  { t:"You will know them by their fruits.", r:"Matthew 7:16 (NKJV)" },
+  { t:"Now may the God of hope fill you with all joy and peace in believing, that you may abound in hope by the power of the Holy Spirit.", r:"Romans 15:13 (NKJV)" },
+  { t:"I say then: Walk in the Spirit, and you shall not fulfill the lust of the flesh.", r:"Galatians 5:16 (NKJV)" },
+  { t:"For as many as are led by the Spirit of God, these are sons of God.", r:"Romans 8:14 (NKJV)" },
+  { t:"But if the Spirit of Him who raised Jesus from the dead dwells in you, He who raised Christ from the dead will also give life to your mortal bodies through His Spirit who dwells in you.", r:"Romans 8:11 (NKJV)" },
+];
+
+const DISCERN_Q = {
+  Love:        [{q:"How do they treat people who can do nothing for them?",g:"With genuine warmth and attention",c:"Indifferent or dismissive"},{q:"Do they love with expectations attached?",g:"Their love feels freely given",c:"Their love feels conditional or transactional"}],
+  Joy:         [{q:"Is their joy authentic or performed?",g:"Present even in hard seasons",c:"Surface-level, dependent on circumstances"}],
+  Peace:       [{q:"How do they handle conflict?",g:"They pursue resolution calmly",c:"They escalate, avoid, or hold long grudges"},{q:"Does being around them feel restful?",g:"You feel settled and safe",c:"You feel on edge or walk on eggshells"}],
+  Patience:    [{q:"How do they respond when things don't go their way?",g:"With acceptance and perseverance",c:"With frustration, control, or pressure"}],
+  Kindness:    [{q:"How do they talk about people not in the room?",g:"With charity and grace",c:"With criticism, gossip, or contempt"}],
+  Goodness:    [{q:"Are they honest even when honesty costs them?",g:"They have integrity under pressure",c:"They shade the truth when it benefits them"},{q:"Do they take responsibility for their actions?",g:"They own their mistakes",c:"They frequently blame others"}],
+  Faithfulness:[{q:"Do they follow through on what they say?",g:"Their word is reliable",c:"There's often a gap between words and action"}],
+  Gentleness:  [{q:"How do they deliver hard truths?",g:"With care and sensitivity",c:"With harshness, sarcasm, or little regard for impact"}],
+  "Self-control":[{q:"How do they handle strong emotions?",g:"They regulate without suppressing — grounded",c:"They explode or repress in unhealthy ways"}],
+};
+
+const NUDGES = [
+  { q:"Pause. Is the Holy Spirit speaking to you right now?", verse:"Be still, and know that I am God. — Psalm 46:10 (NKJV)", opts:["Yes — I sense Him prompting me","I've been too distracted to notice","I'm not sure — I need to be still","Let me pause and pray right now"] },
+  { q:"What are you doing right now?", verse:"Walk in the Spirit, and you shall not fulfill the lust of the flesh. — Galatians 5:16 (NKJV)", opts:["Spending time with God","Working / being productive","Resting and recharging","Scrolling social media","Something else"] },
+  { q:"How is your spirit feeling in this moment?", verse:"The Spirit Himself bears witness with our spirit that we are children of God. — Romans 8:16 (NKJV)", opts:["Peaceful and content","Anxious or distracted","Joyful and grateful","Tired or low"] },
+  { q:"Have you yielded to the Holy Spirit today?", verse:"Do not quench the Spirit. — 1 Thessalonians 5:19 (NKJV)", opts:["Yes — I've been walking closely","In some areas, not others","I've been going my own way today","I want to surrender more fully"] },
+  { q:"Is there anything the Holy Spirit is convicting you of?", verse:"Nevertheless I tell you the truth. It is to your advantage that I go away; for if I do not go away, the Helper will not come to you. — John 16:7 (NKJV)", opts:["Yes — something I need to address","I sense something but haven't acted","Not that I'm aware of right now","Let me take a moment to ask Him"] },
+  { q:"Have you been faithful to your commitments today?", verse:"His lord said to him, 'Well done, good and faithful servant.' — Matthew 25:21 (NKJV)", opts:["Yes, fully","Mostly — stumbled a little","I'm struggling today","I need to make something right"] },
+];
+
+const REFLECT = [
+  { q:"Which fruit am I most naturally strong in — and how can I use it to serve others?", tag:"self-awareness" },
+  { q:"Which fruit challenges me most right now, and what situation is revealing that?", tag:"growth" },
+  { q:"Was there a moment this week I chose self-control over impulse?", tag:"self-control" },
+  { q:"How did I show love to someone who perhaps didn't expect it?", tag:"love" },
+  { q:"What tested my patience most this week, and what did I learn?", tag:"patience" },
+  { q:"Where have I been performing goodness for others' eyes rather than living it in secret?", tag:"goodness" },
+];
+
+// ── In-memory store (works in sandboxed iframes) ──
+const mem = {};
+function load(k, fb) {
+  try { const v = localStorage.getItem(k); if (v) return JSON.parse(v); } catch {}
+  return mem[k] !== undefined ? mem[k] : (typeof fb === 'function' ? fb() : fb);
+}
+function save(k, v) {
+  mem[k] = v;
+  try { localStorage.setItem(k, JSON.stringify(v)); } catch {}
+}
+
+function todayKey() { return new Date().toISOString().slice(0, 10); }
+function weekNum() { const d = new Date(), j = new Date(d.getFullYear(),0,1); return Math.ceil((((d-j)/86400000)+j.getDay()+1)/7); }
+function initials(n) { return (n||"?").split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2); }
+function todayVerse() { const d = new Date(); return VERSES[(d.getDate()+d.getMonth()*5)%VERSES.length]; }
+
+function genCode() {
+  const c = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  return Array.from({length:6}, ()=>c[Math.floor(Math.random()*c.length)]).join("");
+}
+
+// ── Styles ──
+const S = {
+  app: { fontFamily:"Georgia, 'Times New Roman', serif", background:"#f7f4ef", minHeight:"100vh", maxWidth:480, margin:"0 auto", position:"relative" },
+  header: { background:"#f7f4ef", borderBottom:"1px solid rgba(42,37,32,.1)", padding:"14px 20px", display:"flex", alignItems:"center", justifyContent:"space-between", position:"sticky", top:0, zIndex:10 },
+  greet: { fontSize:18, fontWeight:400, color:"#2a2520" },
+  streakBadge: { background:"#f5ecd8", border:"1px solid #dfc07a", borderRadius:20, padding:"4px 12px", fontSize:12, fontWeight:500, color:"#b8913a", display:"flex", alignItems:"center", gap:4 },
+  focusBadge: { background:"#e8f0e9", border:"1px solid #b8d0bb", borderRadius:20, padding:"4px 12px", fontSize:12, color:"#4a6b50", cursor:"pointer", maxWidth:130, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" },
+  nav: { position:"sticky", bottom:0, background:"rgba(247,244,239,.97)", borderTop:"1px solid rgba(42,37,32,.09)", display:"flex", justifyContent:"space-around", padding:"10px 0 6px", zIndex:10 },
+  navBtn: (active) => ({ display:"flex", flexDirection:"column", alignItems:"center", gap:3, background:"none", border:"none", cursor:"pointer", padding:"4px 10px", color: active ? "#6b8f71" : "#c8bdb0", fontSize:10, fontWeight: active ? 500 : 400, fontFamily:"Georgia, serif", transition:"color .2s" }),
+  navIcon: (active) => ({ fontSize:20, lineHeight:1, color: active ? "#6b8f71" : "#c8bdb0" }),
+  pad: { padding:"20px 18px" },
+  verseCard: { background:"#fff", border:"1px solid rgba(42,37,32,.08)", borderRadius:14, padding:"18px 20px", marginBottom:20 },
+  verseText: { fontFamily:"Georgia, serif", fontSize:16, fontStyle:"italic", color:"#2a2520", lineHeight:1.75 },
+  verseRef: { fontSize:11, color:"#a8998a", marginTop:8, textAlign:"right" },
+  focusBanner: { background:"#e8f0e9", border:"1px solid #b8d0bb", borderRadius:14, padding:"14px 18px", marginBottom:20, display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:12 },
+  sectionLabel: { fontSize:10, fontWeight:500, color:"#a8998a", textTransform:"uppercase", letterSpacing:".1em", marginBottom:12 },
+  fruitsGrid: { display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:8, marginBottom:20 },
+  fruitCard: (on, isFocus) => ({ background: on ? (isFocus ? "#f5ecd8" : "#e8f0e9") : "#fff", border:`1px solid ${on ? (isFocus ? "#dfc07a" : "#6b8f71") : "rgba(42,37,32,.1)"}`, borderRadius:12, padding:"12px 8px 10px", cursor:"pointer", textAlign:"center", transition:"all .15s" }),
+  fcIcon: (on, isFocus) => ({ fontSize:20, color: on ? (isFocus ? "#b8913a" : "#6b8f71") : "#c8bdb0", display:"block", marginBottom:5, lineHeight:1 }),
+  fcName: (on, isFocus) => ({ fontSize:11, fontWeight:500, color: on ? (isFocus ? "#b8913a" : "#4a6b50") : "#6b5f52" }),
+  fcRef: { fontSize:9, color:"#c8bdb0", marginTop:3 },
+  btnPrimary: { width:"100%", padding:14, background:"#6b8f71", color:"#fff", border:"none", borderRadius:10, fontSize:14, fontWeight:500, cursor:"pointer", fontFamily:"Georgia, serif" },
+  btnSecondary: { width:"100%", padding:12, background:"transparent", color:"#6b8f71", border:"1px solid #b8d0bb", borderRadius:10, fontSize:14, cursor:"pointer", fontFamily:"Georgia, serif" },
+  btnGhost: { background:"transparent", border:"1px solid rgba(42,37,32,.14)", borderRadius:10, padding:"9px 16px", fontSize:13, color:"#6b5f52", cursor:"pointer", fontFamily:"Georgia, serif" },
+  msg: { fontSize:13, color:"#6b8f71", textAlign:"center", padding:"8px 0", minHeight:28 },
+  card: { background:"#fff", border:"1px solid rgba(42,37,32,.08)", borderRadius:14, padding:"18px", marginBottom:12 },
+  statRow: { display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:8, marginBottom:22 },
+  statBox: { background:"#fff", border:"1px solid rgba(42,37,32,.08)", borderRadius:10, padding:14, textAlign:"center" },
+  statVal: { fontFamily:"Georgia, serif", fontSize:28, fontWeight:300, color:"#2a2520" },
+  statLbl: { fontSize:10, color:"#a8998a", marginTop:3, textTransform:"uppercase", letterSpacing:".04em" },
+  field: { marginBottom:16 },
+  fieldLabel: { display:"block", fontSize:11, fontWeight:500, color:"#a8998a", textTransform:"uppercase", letterSpacing:".08em", marginBottom:8 },
+  input: { width:"100%", padding:"12px 14px", background:"#fff", border:"1px solid rgba(42,37,32,.14)", borderRadius:10, color:"#2a2520", fontSize:15, outline:"none", fontFamily:"Georgia, serif", boxSizing:"border-box" },
+  textarea: { width:"100%", padding:"12px 14px", background:"#fff", border:"1px solid rgba(42,37,32,.14)", borderRadius:10, color:"#2a2520", fontSize:14, outline:"none", fontFamily:"Georgia, serif", resize:"none", lineHeight:1.6, boxSizing:"border-box" },
+  select: { width:"100%", padding:"12px 14px", background:"#fff", border:"1px solid rgba(42,37,32,.14)", borderRadius:10, color:"#2a2520", fontSize:15, outline:"none", fontFamily:"Georgia, serif", WebkitAppearance:"none" },
+  pillTabs: { display:"flex", gap:6, marginBottom:18, flexWrap:"wrap" },
+  pillTab: (active) => ({ padding:"7px 14px", borderRadius:20, border:`1px solid ${active?"#6b8f71":"rgba(42,37,32,.14)"}`, background: active ? "#6b8f71" : "transparent", color: active ? "#fff" : "#6b5f52", fontSize:12, cursor:"pointer", fontFamily:"Georgia, serif", fontWeight: active ? 500 : 400 }),
+  feedItem: (isNudge) => ({ background: isNudge ? "#f5ecd8" : "#fff", border:`1px solid ${isNudge ? "#dfc07a" : "rgba(42,37,32,.08)"}`, borderRadius:14, padding:"14px 16px", marginBottom:10 }),
+  personCard: { background:"#fff", border:"1px solid rgba(42,37,32,.08)", borderRadius:14, padding:"16px 18px", marginBottom:10, cursor:"pointer", display:"flex", alignItems:"center", gap:14 },
+  personAv: { width:44, height:44, borderRadius:"50%", background:"#ede8f5", border:"1px solid #c8b8e8", display:"flex", alignItems:"center", justifyContent:"center", fontSize:16, color:"#8070a0", flexShrink:0 },
+  modal: { position:"fixed", inset:0, background:"rgba(42,37,32,.5)", zIndex:100, display:"flex", alignItems:"flex-end", justifyContent:"center" },
+  modalBox: { background:"#f7f4ef", borderRadius:"22px 22px 0 0", width:"100%", maxWidth:480, maxHeight:"85vh", overflowY:"auto", padding:"26px 22px 40px", animation:"slideUp .25s ease" },
+  overlay: { position:"fixed", inset:0, background:"rgba(42,37,32,.55)", zIndex:110, display:"flex", alignItems:"center", justifyContent:"center", padding:20 },
+  nudgeCard: { background:"#fff", border:"1px solid rgba(42,37,32,.1)", borderRadius:14, padding:"28px 22px 22px", width:"100%", maxWidth:360, textAlign:"center" },
+  aiLoading: { display:"flex", alignItems:"center", gap:8, fontSize:13, color:"#a8998a", padding:"12px 0" },
+  toggle: (on) => ({ width:44, height:25, background: on ? "#6b8f71" : "#e8e2d8", border:`1px solid ${on ? "#6b8f71" : "rgba(42,37,32,.14)"}`, borderRadius:13, cursor:"pointer", position:"relative", transition:"background .2s", flexShrink:0 }),
+  toggleKnob: (on) => ({ width:19, height:19, background:"#fff", borderRadius:"50%", position:"absolute", top:2, left: on ? 22 : 2, transition:"left .2s", boxShadow:"0 1px 4px rgba(0,0,0,.15)" }),
+  weekDots: { display:"flex", gap:6, marginBottom:20 },
+  wdot: (done, today) => ({ flex:1, height:42, borderRadius:10, background: done ? "#e8f0e9" : "#fff", border:`${today ? "1.5" : "1"}px solid ${done ? "#6b8f71" : "rgba(42,37,32,.1)"}`, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:2, fontSize:10, color: done ? "#4a6b50" : "#c8bdb0" }),
+  barRow: { display:"flex", alignItems:"center", gap:10, marginBottom:9 },
+  barTrack: { flex:1, height:4, background:"#e8e2d8", borderRadius:2, overflow:"hidden" },
+  barFill: (pct, gold) => ({ height:"100%", background: gold ? "#b8913a" : "#6b8f71", borderRadius:2, width:`${pct}%`, transition:"width .6s ease" }),
+  reflectCard: { background:"#fff", border:"1px solid rgba(42,37,32,.08)", borderRadius:14, padding:18, marginBottom:10 },
+  flagRow: { display:"flex", alignItems:"flex-start", gap:12, padding:"12px 0", borderBottom:"1px solid rgba(42,37,32,.07)" },
+  flagIcon: (green) => ({ width:28, height:28, borderRadius:"50%", background: green ? "#e8f0e9" : "#f5e8e8", color: green ? "#6b8f71" : "#b06060", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, flexShrink:0, marginTop:1 }),
+  inviteCode: { fontFamily:"monospace", fontSize:32, fontWeight:600, color:"#b8913a", textAlign:"center", letterSpacing:".22em", background:"#f5ecd8", border:"1px solid #dfc07a", borderRadius:10, padding:18, margin:"14px 0" },
+};
+
+// ── Dots loading indicator ──
+function Dots() {
+  return (
+    <span style={S.aiLoading}>
+      <span>Thinking</span>
+      <span style={{display:"flex",gap:3}}>
+        {[0,1,2].map(i => (
+          <span key={i} style={{width:5,height:5,borderRadius:"50%",background:"#6b8f71",display:"inline-block",animation:`dot 1.2s ease-in-out ${i*0.2}s infinite`}}/>
+        ))}
+      </span>
+    </span>
+  );
+}
+
+
+
+// ── Fruit Icons (custom SVG, each hand-drawn for the fruit) ──
+function FruitIcon({ name, size = 24, color = "#a8998a" }) {
+  const s = size;
+  const h = s / 2;
+  const sw = Math.max(1, s * 0.07); // stroke width
+
+  const icons = {
+    love: (
+      <svg width={s} height={s} viewBox="0 0 24 24" fill="none">
+        <path d="M12 20.5C12 20.5 3 14.5 3 8.5C3 6.015 5.015 4 7.5 4C9.24 4 10.755 4.96 11.53 6.37C11.77 6.81 12.23 6.81 12.47 6.37C13.245 4.96 14.76 4 16.5 4C18.985 4 21 6.015 21 8.5C21 14.5 12 20.5 12 20.5Z" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+      </svg>
+    ),
+    joy: (
+      <svg width={s} height={s} viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="8" stroke={color} strokeWidth={sw} fill="none"/>
+        <line x1="12" y1="2" x2="12" y2="4.5" stroke={color} strokeWidth={sw} strokeLinecap="round"/>
+        <line x1="12" y1="19.5" x2="12" y2="22" stroke={color} strokeWidth={sw} strokeLinecap="round"/>
+        <line x1="2" y1="12" x2="4.5" y2="12" stroke={color} strokeWidth={sw} strokeLinecap="round"/>
+        <line x1="19.5" y1="12" x2="22" y2="12" stroke={color} strokeWidth={sw} strokeLinecap="round"/>
+        <line x1="4.93" y1="4.93" x2="6.64" y2="6.64" stroke={color} strokeWidth={sw} strokeLinecap="round"/>
+        <line x1="17.36" y1="17.36" x2="19.07" y2="19.07" stroke={color} strokeWidth={sw} strokeLinecap="round"/>
+        <line x1="19.07" y1="4.93" x2="17.36" y2="6.64" stroke={color} strokeWidth={sw} strokeLinecap="round"/>
+        <line x1="6.64" y1="17.36" x2="4.93" y2="19.07" stroke={color} strokeWidth={sw} strokeLinecap="round"/>
+        <circle cx="12" cy="12" r="2.5" fill={color} opacity="0.7"/>
+      </svg>
+    ),
+    peace: (
+      <svg width={s} height={s} viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="8.5" stroke={color} strokeWidth={sw} fill="none"/>
+        <line x1="12" y1="3.5" x2="12" y2="20.5" stroke={color} strokeWidth={sw} strokeLinecap="round"/>
+        <line x1="12" y1="12" x2="5.5" y2="17.5" stroke={color} strokeWidth={sw} strokeLinecap="round"/>
+        <line x1="12" y1="12" x2="18.5" y2="17.5" stroke={color} strokeWidth={sw} strokeLinecap="round"/>
+      </svg>
+    ),
+    patience: (
+      <svg width={s} height={s} viewBox="0 0 24 24" fill="none">
+        <path d="M8 3h8" stroke={color} strokeWidth={sw} strokeLinecap="round"/>
+        <path d="M8 21h8" stroke={color} strokeWidth={sw} strokeLinecap="round"/>
+        <path d="M8 3C8 3 6 6 6 9C6 12 12 12 12 12C12 12 6 12 6 15C6 18 8 21 8 21" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+        <path d="M16 3C16 3 18 6 18 9C18 12 12 12 12 12C12 12 18 12 18 15C18 18 16 21 16 21" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+        <circle cx="12" cy="14.5" r="1.2" fill={color} opacity="0.6"/>
+      </svg>
+    ),
+    kindness: (
+      <svg width={s} height={s} viewBox="0 0 24 24" fill="none">
+        <path d="M18 11V17C18 18.105 17.105 19 16 19H8C6.895 19 6 18.105 6 17V11" stroke={color} strokeWidth={sw} strokeLinecap="round" fill="none"/>
+        <path d="M4 8H20" stroke={color} strokeWidth={sw} strokeLinecap="round"/>
+        <path d="M4 8C4 6.895 4.895 6 6 6H18C19.105 6 20 6.895 20 8" stroke={color} strokeWidth={sw} strokeLinecap="round" fill="none"/>
+        <line x1="12" y1="6" x2="12" y2="19" stroke={color} strokeWidth={sw} strokeLinecap="round"/>
+        <path d="M9 6C9 4.895 10.343 4 12 4C13.657 4 15 4.895 15 6" stroke={color} strokeWidth={sw} strokeLinecap="round" fill="none"/>
+      </svg>
+    ),
+    goodness: (
+      <svg width={s} height={s} viewBox="0 0 24 24" fill="none">
+        <path d="M12 3L13.8 8.6H19.6L14.9 11.9L16.7 17.5L12 14.2L7.3 17.5L9.1 11.9L4.4 8.6H10.2L12 3Z" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+      </svg>
+    ),
+    faithfulness: (
+      <svg width={s} height={s} viewBox="0 0 24 24" fill="none">
+        <path d="M12 22C12 22 4 17 4 10C4 7.24 5.895 5 8.5 5C10.12 5 11.54 5.84 12 7C12.46 5.84 13.88 5 15.5 5C18.105 5 20 7.24 20 10C20 17 12 22 12 22Z" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+        <path d="M12 7V15" stroke={color} strokeWidth={sw} strokeLinecap="round"/>
+        <path d="M9 10H15" stroke={color} strokeWidth={sw} strokeLinecap="round"/>
+      </svg>
+    ),
+    gentleness: (
+      <svg width={s} height={s} viewBox="0 0 24 24" fill="none">
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+        <path d="M12 8v4M10 10h4" stroke={color} strokeWidth={sw} strokeLinecap="round"/>
+      </svg>
+    ),
+    selfcontrol: (
+      <svg width={s} height={s} viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="9" stroke={color} strokeWidth={sw} fill="none"/>
+        <path d="M12 7v5l3 3" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M7 3.34A10 10 0 0 0 12 22a10 10 0 0 0 0-20" stroke={color} strokeWidth={sw*0.7} strokeLinecap="round" fill="none" opacity="0.4"/>
+      </svg>
+    ),
+  };
+
+  return icons[name] || <svg width={s} height={s} viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" stroke={color} strokeWidth={sw} fill="none"/></svg>;
+}
+
+
+// ── Logo Components ──
+function LogoMark({ size = 32, color = "#2d5a35", bg = "none", padding = 0 }) {
+  const r = size * 0.29;
+  const cx = size / 2;
+  const cy = size * 0.46;
+  const stemTop = cy + r * 1.32;
+  const stemBot = cy + r * 2.05;
+  const leafY = stemTop + (stemBot - stemTop) * 0.55;
+  const dotR = size * 0.068;
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} fill="none" xmlns="http://www.w3.org/2000/svg" style={{flexShrink:0}}>
+      {bg !== "none" && <rect width={size} height={size} rx={size*0.2} fill={bg}/>}
+      <circle cx={cx} cy={cy} r={r} stroke={color} strokeWidth={size*0.028} fill="none"/>
+      <circle cx={cx} cy={cy - r} r={r} stroke={color} strokeWidth={size*0.028} fill="none"/>
+      <circle cx={cx} cy={cy + r} r={r} stroke={color} strokeWidth={size*0.028} fill="none"/>
+      <circle cx={cx - r} cy={cy} r={r} stroke={color} strokeWidth={size*0.028} fill="none"/>
+      <circle cx={cx + r} cy={cy} r={r} stroke={color} strokeWidth={size*0.028} fill="none"/>
+      <path d={`M${cx} ${cy-r*0.95} C${cx+r*0.65} ${cy-r*0.45} ${cx+r*0.88} ${cy} ${cx+r*0.88} ${cy} C${cx+r*0.88} ${cy} ${cx+r*0.65} ${cy+r*0.45} ${cx} ${cy+r*0.95} C${cx-r*0.65} ${cy+r*0.45} ${cx-r*0.88} ${cy} ${cx-r*0.88} ${cy} C${cx-r*0.88} ${cy} ${cx-r*0.65} ${cy-r*0.45} ${cx} ${cy-r*0.95}Z`} fill={color} opacity="0.13"/>
+      <path d={`M${cx-r*0.95} ${cy} C${cx-r*0.45} ${cy-r*0.65} ${cx} ${cy-r*0.88} ${cx} ${cy-r*0.88} C${cx} ${cy-r*0.88} ${cx+r*0.45} ${cy-r*0.65} ${cx+r*0.95} ${cy} C${cx+r*0.45} ${cy+r*0.65} ${cx} ${cy+r*0.88} ${cx} ${cy+r*0.88} C${cx} ${cy+r*0.88} ${cx-r*0.45} ${cy+r*0.65} ${cx-r*0.95} ${cy}Z`} fill={color} opacity="0.13"/>
+      <circle cx={cx} cy={cy} r={dotR} fill={color}/>
+      <line x1={cx} y1={stemBot} x2={cx} y2={stemTop} stroke={color} strokeWidth={size*0.028} strokeLinecap="round"/>
+      <path d={`M${cx} ${leafY} Q${cx-r*0.72} ${leafY-r*0.38} ${cx-r*0.78} ${leafY-r*0.82} Q${cx-r*0.22} ${leafY-r*0.55} ${cx} ${leafY-r*0.28}`} fill={color} opacity="0.78"/>
+      <path d={`M${cx} ${leafY} Q${cx+r*0.72} ${leafY-r*0.38} ${cx+r*0.78} ${leafY-r*0.82} Q${cx+r*0.22} ${leafY-r*0.55} ${cx} ${leafY-r*0.28}`} fill={color} opacity="0.78"/>
+    </svg>
+  );
+}
+
+function SplashLogo() {
+  return (
+    <div style={{textAlign:"center", animation:"fadeIn .7s ease both"}}>
+      <div style={{display:"flex", justifyContent:"center", marginBottom:18, animation:"breathe 3s ease-in-out infinite"}}>
+        <LogoMark size={72} color="#2d5a35"/>
+      </div>
+      <div style={{fontFamily:"Georgia, serif", fontSize:40, fontWeight:300, color:"#2a2520", letterSpacing:".02em"}}>Fruitful</div>
+      <div style={{width:32, height:1, background:"#b8d0bb", margin:"16px auto"}}/>
+      <div style={{fontSize:12, color:"#a8998a", letterSpacing:".14em", textTransform:"uppercase"}}>Walk in the Spirit</div>
+    </div>
+  );
+}
+
+
+// ── Nav Icons ──
+function NavIcon({ id, active }) {
+  const c = active ? "#2d5a35" : "#c8bdb0";
+  const sw = 1.6;
+  const icons = {
+    today: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="5" stroke={c} strokeWidth={sw} fill="none"/>
+        <line x1="12" y1="2" x2="12" y2="4.5" stroke={c} strokeWidth={sw} strokeLinecap="round"/>
+        <line x1="12" y1="19.5" x2="12" y2="22" stroke={c} strokeWidth={sw} strokeLinecap="round"/>
+        <line x1="2" y1="12" x2="4.5" y2="12" stroke={c} strokeWidth={sw} strokeLinecap="round"/>
+        <line x1="19.5" y1="12" x2="22" y2="12" stroke={c} strokeWidth={sw} strokeLinecap="round"/>
+        <line x1="4.93" y1="4.93" x2="6.64" y2="6.64" stroke={c} strokeWidth={sw} strokeLinecap="round"/>
+        <line x1="17.36" y1="17.36" x2="19.07" y2="19.07" stroke={c} strokeWidth={sw} strokeLinecap="round"/>
+        <line x1="19.07" y1="4.93" x2="17.36" y2="6.64" stroke={c} strokeWidth={sw} strokeLinecap="round"/>
+        <line x1="6.64" y1="17.36" x2="4.93" y2="19.07" stroke={c} strokeWidth={sw} strokeLinecap="round"/>
+      </svg>
+    ),
+    journal: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <rect x="4" y="3" width="14" height="18" rx="2" stroke={c} strokeWidth={sw} fill="none"/>
+        <line x1="8" y1="8" x2="14" y2="8" stroke={c} strokeWidth={sw} strokeLinecap="round"/>
+        <line x1="8" y1="12" x2="16" y2="12" stroke={c} strokeWidth={sw} strokeLinecap="round"/>
+        <line x1="8" y1="16" x2="13" y2="16" stroke={c} strokeWidth={sw} strokeLinecap="round"/>
+        <line x1="18" y1="3" x2="18" y2="21" stroke={c} strokeWidth={sw} strokeLinecap="round"/>
+      </svg>
+    ),
+    prayer: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <path d="M12 21C12 21 4.5 15.5 4.5 9.5C4.5 7.015 6.515 5 9 5C10.5 5 11.83 5.72 12.6 6.84" stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+        <path d="M12 21C12 21 19.5 15.5 19.5 9.5C19.5 7.015 17.485 5 15 5C13.5 5 12.17 5.72 11.4 6.84" stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+        <path d="M9 12l2 2 4-4" stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    ),
+    discern: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="3" stroke={c} strokeWidth={sw} fill="none"/>
+        <path d="M2 12C4 7 7.5 4.5 12 4.5C16.5 4.5 20 7 22 12C20 17 16.5 19.5 12 19.5C7.5 19.5 4 17 2 12Z" stroke={c} strokeWidth={sw} fill="none"/>
+      </svg>
+    ),
+    community: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <circle cx="9" cy="8" r="3" stroke={c} strokeWidth={sw} fill="none"/>
+        <circle cx="17" cy="10" r="2.5" stroke={c} strokeWidth={sw} fill="none"/>
+        <path d="M3 20c0-3.314 2.686-6 6-6s6 2.686 6 6" stroke={c} strokeWidth={sw} strokeLinecap="round" fill="none"/>
+        <path d="M17 16c1.657 0 3 1.343 3 3v1" stroke={c} strokeWidth={sw} strokeLinecap="round" fill="none"/>
+      </svg>
+    ),
+    harvest: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <rect x="3" y="14" width="4" height="7" rx="1" stroke={c} strokeWidth={sw} fill="none"/>
+        <rect x="9.5" y="9" width="4" height="12" rx="1" stroke={c} strokeWidth={sw} fill="none"/>
+        <rect x="16" y="4" width="4" height="17" rx="1" stroke={c} strokeWidth={sw} fill="none"/>
+        <path d="M3 5l4-2 4 3 4-4 4 2" stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+      </svg>
+    ),
+    settings: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="3" stroke={c} strokeWidth={sw} fill="none"/>
+        <path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke={c} strokeWidth={sw} strokeLinecap="round"/>
+      </svg>
+    ),
+  };
+  return icons[id] || null;
+}
+
+// ── Main App ──
+export default function App() {
+  const [phase, setPhase] = useState("splash"); // splash | onboard | app
+  const [tab, setTab] = useState("today");
+  const [obName, setObName] = useState("");
+  const [obFocus, setObFocus] = useState("");
+  const [profile, setProfile] = useState(null);
+  const [checked, setChecked] = useState([]);
+  const [weekData, setWeekData] = useState({});
+  const [streak, setStreak] = useState(0);
+  const [total, setTotal] = useState(0);
+  const [weekFocus, setWeekFocusState] = useState("");
+  const [modal, setModal] = useState(null); // null | { type, data }
+  const [nudge, setNudge] = useState(null);
+  const [checkinMsg, setCheckinMsg] = useState("");
+  const [nudgeEnabled, setNudgeEnabled] = useState(true);
+  const [people, setPeople] = useState([]);
+  const [groups, setGroups] = useState([]);
+  const [feeds, setFeeds] = useState({});
+
+  // Boot
+  useEffect(() => {
+    const style = document.createElement("style");
+    style.textContent = `
+      @keyframes dot { 0%,80%,100%{transform:scale(.6);opacity:.3} 40%{transform:scale(1);opacity:1} }
+      @keyframes slideUp { from{transform:translateY(100%)} to{transform:none} }
+      @keyframes fadeIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:none} }
+      * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+      body { margin:0; background:#f7f4ef; }
+      textarea:focus, input:focus, select:focus { border-color:#6b8f71 !important; outline:none; }
+      ::-webkit-scrollbar { width:0; }
+    `;
+    document.head.appendChild(style);
+
+    const p = load("frt_profile", null);
+    const wk = load("frt_week", {});
+    const s = load("frt_streak", 0);
+    const t = load("frt_total", 0);
+    const nd = load("frt_nudges", true);
+    const pp = load("frt_people", []);
+    const gg = load("frt_groups", []);
+    const ff = {};
+    gg.forEach(g => { ff[g.id] = load("frt_feed_"+g.id, []); });
+
+    setWeekData(wk);
+    setStreak(s);
+    setTotal(t);
+    setNudgeEnabled(nd);
+    setPeople(pp);
+    setGroups(gg);
+    setFeeds(ff);
+
+    if (p) {
+      setProfile(p);
+      setChecked(load("frt_today_"+todayKey(), []));
+      const focus = getWeekFocus(wk);
+      setWeekFocusState(focus);
+    }
+
+    setTimeout(() => {
+      if (p) setPhase("app");
+      else setPhase("onboard");
+    }, 1600);
+  }, []);
+
+  // Schedule nudge prompts
+  useEffect(() => {
+    if (!nudgeEnabled || phase !== "app") return;
+    const timer = setTimeout(() => {
+      const p = NUDGES[Math.floor(Math.random() * NUDGES.length)];
+      setNudge(p);
+    }, (20 + Math.random() * 40) * 60 * 1000);
+    return () => clearTimeout(timer);
+  }, [nudge, nudgeEnabled, phase]);
+
+  function getWeekFocus(wkData) {
+    const stored = load("frt_focus_history", []);
+    const key = `${new Date().getFullYear()}-W${weekNum()}`;
+    const entry = stored.find(e => e.key === key);
+    if (entry) return entry.fruit;
+    // suggest weakest fruit
+    const fc = {};
+    FRUITS.forEach((_,i) => fc[i]=0);
+    Object.values(wkData||weekData).forEach(arr => arr.forEach(i => { fc[i]=(fc[i]||0)+1; }));
+    const weakest = Object.keys(fc).sort((a,b)=>fc[a]-fc[b])[0];
+    const suggested = FRUITS[parseInt(weakest)].name;
+    const newEntry = { key, fruit:suggested };
+    const updated = [...stored, newEntry].slice(-52);
+    save("frt_focus_history", updated);
+    return suggested;
+  }
+
+  function setFocusFruit(name) {
+    const stored = load("frt_focus_history", []);
+    const key = `${new Date().getFullYear()}-W${weekNum()}`;
+    const idx = stored.findIndex(e => e.key===key);
+    const entry = { key, fruit:name };
+    const updated = idx>=0 ? stored.map((e,i)=>i===idx?entry:e) : [...stored, entry];
+    save("frt_focus_history", updated.slice(-52));
+    setWeekFocusState(name);
+  }
+
+  function finishOnboard() {
+    if (!obName.trim()) return;
+    const p = { name:obName.trim(), joined:new Date().toISOString() };
+    save("frt_profile", p);
+    setProfile(p);
+    if (obFocus) setFocusFruit(obFocus);
+    else { const f = getWeekFocus({}); setWeekFocusState(f); }
+    setPhase("app");
+  }
+
+  function toggleFruit(i) {
+    const next = checked.includes(i) ? checked.filter(x=>x!==i) : [...checked, i];
+    setChecked(next);
+    save("frt_today_"+todayKey(), next);
+  }
+
+  function saveCheckin() {
+    const key = todayKey();
+    const wk = { ...weekData, [key]: checked };
+    setWeekData(wk);
+    save("frt_week", wk);
+    const dates = load("frt_checkin_dates", []);
+    if (!dates.includes(key)) {
+      save("frt_checkin_dates", [...dates, key]);
+      const ns = streak+1, nt = total+1;
+      setStreak(ns); setTotal(nt);
+      save("frt_streak", ns); save("frt_total", nt);
+    }
+    setCheckinMsg(checked.length > 0 ? `${checked.length} fruit${checked.length>1?"s":""} recorded — keep growing.` : "Check-in saved. Every day is a new beginning.");
+    postToGroups("checkin", { fruits: checked.map(i=>FRUITS[i].name) });
+    setTimeout(() => setCheckinMsg(""), 3000);
+  }
+
+  function postToGroups(type, data) {
+    if (!groups.length) return;
+    const p = profile || load("frt_profile", {name:"You"});
+    groups.forEach(g => {
+      const feed = feeds[g.id] || [];
+      const body = type==="checkin"
+        ? (data.fruits.length>0 ? `Checked in — walked in ${data.fruits.join(", ")} today.` : "Completed their daily check-in.")
+        : data.message || "";
+      const newFeed = [{ userId:"me", userName:p.name, type, body, fruits:data.fruits||[], at:new Date().toISOString() }, ...feed].slice(0,50);
+      setFeeds(f => ({...f, [g.id]: newFeed}));
+      save("frt_feed_"+g.id, newFeed);
+    });
+  }
+
+  const focusFruitObj = FRUITS.find(f=>f.name===weekFocus) || FRUITS[0];
+  const focusIdx = FRUITS.indexOf(focusFruitObj);
+  const v = todayVerse();
+  const wkeys = (() => {
+    const keys=[]; const now=new Date(); const dow=now.getDay();
+    for(let i=0;i<7;i++){const d=new Date(now);d.setDate(now.getDate()-(dow-i));keys.push(d.toISOString().slice(0,10));}
+    return keys;
+  })();
+  const DAYS=["S","M","T","W","T","F","S"];
+  const h = new Date().getHours();
+  const greeting = h<12?"Good morning":h<17?"Good afternoon":"Good evening";
+
+  // ── SPLASH ──
+  if (phase==="splash") return (
+    <div style={{...S.app, display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", height:"100vh"}}>
+      <SplashLogo/>
+      <div style={{position:"absolute", bottom:48, width:120, height:2, background:"#e8e2d8", borderRadius:2}}>
+        <div style={{height:"100%", background:"#6b8f71", borderRadius:2, animation:"barLoad 1.6s ease forwards"}}/>
+      </div>
+      <style>{`@keyframes barLoad{from{width:0}to{width:100%}} @keyframes fadeIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}`}</style>
+    </div>
+  );
+
+  // ── ONBOARDING ──
+  if (phase==="onboard") return (
+    <div style={{...S.app, overflowY:"auto", height:"100vh"}}>
+      <div style={{padding:"48px 28px 48px", maxWidth:400, margin:"0 auto"}}>
+        <div style={{display:"flex", justifyContent:"center", marginBottom:20}}><LogoMark size={52} color="#2d5a35"/></div>
+        <h1 style={{fontFamily:"Georgia, serif", fontSize:28, fontWeight:300, textAlign:"center", color:"#2a2520", marginBottom:10}}>Welcome to Fruitful</h1>
+        <p style={{fontSize:14, color:"#6b5f52", textAlign:"center", lineHeight:1.75, marginBottom:8}}>A daily companion to help you lean into the Holy Spirit — not to replace Him, but to help you stay attentive to His work in your life.</p>
+        <div style={{background:"#e8f0e9",border:"1px solid #b8d0bb",borderRadius:10,padding:"12px 16px",marginBottom:28,textAlign:"center"}}>
+          <div style={{fontFamily:"Georgia,serif",fontSize:13,fontStyle:"italic",color:"#2d5a35",lineHeight:1.7}}>"Walk in the Spirit, and you shall not fulfill the lust of the flesh."</div>
+          <div style={{fontSize:11,color:"#6b8f71",marginTop:5,letterSpacing:".04em"}}>— Galatians 5:16 (NKJV)</div>
+        </div>
+        <div style={S.field}>
+          <label style={S.fieldLabel}>Your name</label>
+          <input style={S.input} placeholder="e.g. Jane Doe" value={obName} onChange={e=>setObName(e.target.value)} maxLength={40}/>
+        </div>
+        <div style={S.field}>
+          <label style={S.fieldLabel}>Focus fruit for this week (app will suggest)</label>
+          <select style={S.select} value={obFocus} onChange={e=>setObFocus(e.target.value)}>
+            <option value="">Let the app suggest for me</option>
+            {FRUITS.map(f=><option key={f.name}>{f.name}</option>)}
+          </select>
+        </div>
+        <button style={{...S.btnPrimary, marginTop:8}} onClick={finishOnboard}>Begin my journey</button>
+      </div>
+    </div>
+  );
+
+  // ── MAIN APP ──
+  const fc = {}; FRUITS.forEach((_,i)=>fc[i]=0);
+  Object.values(weekData).forEach(arr=>arr.forEach(i=>{fc[i]=(fc[i]||0)+1}));
+  const wkFruits = Object.values(fc).reduce((a,b)=>a+b,0);
+  const fruitOrder = focusIdx > 0 ? [focusIdx, ...FRUITS.map((_,i)=>i).filter(i=>i!==focusIdx)] : FRUITS.map((_,i)=>i);
+
+  return (
+    <div style={S.app}>
+      {/* Header */}
+      <div style={S.header}>
+        <div style={{display:"flex", alignItems:"center", gap:8}}>
+          <LogoMark size={28} color="#2d5a35"/>
+          <span style={S.greet}>{greeting}{profile ? `, ${profile.name.split(" ")[0]}` : ""}</span>
+        </div>
+        <div style={{display:"flex", alignItems:"center", gap:8}}>
+          {weekFocus && <div style={S.focusBadge} onClick={()=>setModal({type:"focus"})}>✦ {weekFocus}</div>}
+          <div style={S.streakBadge}>🔥 {streak}</div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div style={{paddingBottom:90, minHeight:"80vh"}}>
+        {tab==="today" && <TabToday checked={checked} toggleFruit={toggleFruit} saveCheckin={saveCheckin} checkinMsg={checkinMsg} fruitOrder={fruitOrder} focusIdx={focusIdx} weekFocus={weekFocus} v={v} wkeys={wkeys} weekData={weekData} DAYS={DAYS} focusFruitObj={focusFruitObj} setModal={setModal}/>}
+        {tab==="journal" && <TabJournal/>}
+        {tab==="prayer" && <TabPrayer checked={checked} profile={profile}/>}
+        {tab==="discern" && <TabDiscern people={people} setPeople={p=>{setPeople(p);save("frt_people",p);}} setModal={setModal}/>}
+        {tab==="community" && <TabCommunity groups={groups} setGroups={g=>{setGroups(g);save("frt_groups",g);}} feeds={feeds} setFeeds={setFeeds} profile={profile} setModal={setModal} postToGroups={postToGroups}/>}
+        {tab==="harvest" && <TabHarvest streak={streak} total={total} wkFruits={wkFruits} fc={fc} weekFocus={weekFocus} focusIdx={focusIdx} profile={profile}/>}
+        {tab==="settings" && <TabSettings profile={profile} setProfile={p=>{setProfile(p);save("frt_profile",p);}} nudgeEnabled={nudgeEnabled} setNudgeEnabled={v=>{setNudgeEnabled(v);save("frt_nudges",v);}} weekFocus={weekFocus} setFocusFruit={setFocusFruit}/>}
+      </div>
+
+      {/* Copyright strip */}
+      <div style={{position:"fixed",bottom:"calc(68px + env(safe-area-inset-bottom,0px))",left:0,right:0,textAlign:"center",padding:"4px 0",background:"rgba(247,244,239,.95)",borderTop:"1px solid rgba(42,37,32,.05)",zIndex:9,backdropFilter:"blur(8px)",WebkitBackdropFilter:"blur(8px)"}}>
+        <span style={{fontSize:9,color:"#c8bdb0",letterSpacing:".06em",fontFamily:"Georgia,serif"}}>
+          © 2025 Fruitful · v0.1 beta · Created by Eri-Oluwa Eunice Oyeniyi
+        </span>
+      </div>
+
+      {/* Bottom Nav */}
+      <div style={S.nav}>
+        {[
+          {id:"today",     label:"Today"},
+          {id:"journal",   label:"Journal"},
+          {id:"prayer",    label:"Prayer"},
+          {id:"discern",   label:"Discern"},
+          {id:"community", label:"Community"},
+          {id:"harvest",   label:"Harvest"},
+          {id:"settings",  label:"More"},
+        ].map(({id,label})=>(
+          <button key={id} style={S.navBtn(tab===id)} onClick={()=>setTab(id)}>
+            <NavIcon id={id} active={tab===id}/>
+            <span>{label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Focus modal */}
+      {modal?.type==="focus" && <FocusModal current={weekFocus} setFocusFruit={setFocusFruit} onClose={()=>setModal(null)} fc={fc}/>}
+      {modal?.type==="add-person" && <AddPersonModal onClose={()=>setModal(null)} onAdd={p=>{const next=[...people,p];setPeople(next);save("frt_people",next);setModal(null);}}/>}
+      {modal?.type==="create-group" && <CreateGroupModal profile={profile} onClose={()=>setModal(null)} onCreated={(g,f)=>{const ng=[...groups,g];setGroups(ng);save("frt_groups",ng);setFeeds(ff=>({...ff,[g.id]:f}));save("frt_feed_"+g.id,f);setModal({type:"invite",group:g});}}/>}
+      {modal?.type==="join-group" && <JoinGroupModal profile={profile} onClose={()=>setModal(null)} onJoined={(g,f)=>{const ng=[...groups,g];setGroups(ng);save("frt_groups",ng);setFeeds(ff=>({...ff,[g.id]:f}));save("frt_feed_"+g.id,f);setModal(null);}}/>}
+      {modal?.type==="invite" && <InviteModal group={modal.group} onClose={()=>setModal(null)}/>}
+      {modal?.type==="person" && <PersonModal person={modal.person} idx={modal.idx} people={people} setPeople={p=>{setPeople(p);save("frt_people",p);}} onClose={()=>setModal(null)}/>}
+      {modal?.type==="deeper" && <DeeperModal q={modal.q} onClose={()=>setModal(null)}/>}
+
+      {/* Spirit Nudge Overlay */}
+      {nudge && (
+        <div style={S.overlay}>
+          <div style={{...S.nudgeCard, textAlign:"left"}}>
+            <div style={{textAlign:"center",fontSize:24,marginBottom:10}}>🕊</div>
+            <div style={{fontFamily:"Georgia,serif",fontSize:17,fontWeight:300,color:"#2a2520",marginBottom:8,textAlign:"center"}}>A moment with the Spirit</div>
+            <div style={{fontSize:14,color:"#6b5f52",lineHeight:1.65,marginBottom:12,textAlign:"center"}}>{nudge.q}</div>
+            {nudge.verse && (
+              <div style={{background:"#e8f0e9",border:"1px solid #b8d0bb",borderRadius:9,padding:"10px 14px",marginBottom:14}}>
+                <div style={{fontFamily:"Georgia,serif",fontSize:12,fontStyle:"italic",color:"#2d5a35",lineHeight:1.7}}>{nudge.verse}</div>
+              </div>
+            )}
+            <div style={{display:"flex",flexDirection:"column",gap:7,marginBottom:12}}>
+              {nudge.opts.map((o,i)=>(
+                <button key={i} style={{padding:"11px 12px",background:"#f7f4ef",border:"1px solid rgba(42,37,32,.1)",borderRadius:10,fontFamily:"Georgia,serif",fontSize:13,color:"#6b5f52",cursor:"pointer",textAlign:"left"}}
+                  onClick={()=>{ postToGroups("nudge",{fruits:[],message:`Spirit moment: "${nudge.q}" — ${o}`}); setNudge(null); }}>
+                  {o}
+                </button>
+              ))}
+            </div>
+            <button style={{background:"none",border:"none",fontSize:12,color:"#a8998a",cursor:"pointer",fontFamily:"Georgia,serif",width:"100%",textAlign:"center"}} onClick={()=>setNudge(null)}>Not now</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════
+// TAB: TODAY
+// ══════════════════════════════════════════
+function TabToday({checked,toggleFruit,saveCheckin,checkinMsg,fruitOrder,focusIdx,weekFocus,v,wkeys,weekData,DAYS,focusFruitObj,setModal}) {
+  return (
+    <div style={S.pad}>
+      <div style={S.verseCard}>
+        <div style={S.verseText}>"{v.t}"</div>
+        <div style={S.verseRef}>— {v.r}</div>
+      </div>
+      <div style={S.focusBanner}>
+        <div style={{flex:1}}>
+          <div style={{fontSize:10,fontWeight:500,color:"#4a6b50",textTransform:"uppercase",letterSpacing:".08em",marginBottom:4}}>This week's focus</div>
+          <div style={{fontFamily:"Georgia, serif",fontSize:22,color:"#4a6b50"}}>{focusFruitObj.name}</div>
+          <div style={{fontSize:13,color:"#4a6b50",marginTop:3,opacity:.8}}>{focusFruitObj.q}</div>
+        </div>
+        <button style={{fontSize:11,color:"#6b8f71",background:"none",border:"1px solid #b8d0bb",borderRadius:20,padding:"5px 10px",cursor:"pointer",whiteSpace:"nowrap",fontFamily:"Georgia, serif"}} onClick={()=>setModal({type:"focus"})}>Change</button>
+      </div>
+      <div style={S.sectionLabel}>Which fruits did you walk in today?</div>
+      <div style={S.fruitsGrid}>
+        {fruitOrder.map(i=>{
+          const f=FRUITS[i]; const on=checked.includes(i); const isFocus=f.name===weekFocus;
+          return (
+            <div key={i} style={S.fruitCard(on,isFocus)} onClick={()=>toggleFruit(i)} role="checkbox" aria-checked={on}>
+              <FruitIcon name={f.icon} size={26} color={on ? (isFocus ? "#b8913a" : "#6b8f71") : "#c8bdb0"}/>
+              <div style={S.fcName(on,isFocus)}>{f.name}{isFocus?" ✦":""}</div>
+              <div style={S.fcRef}>{f.ref}</div>
+            </div>
+          );
+        })}
+      </div>
+      <button style={S.btnPrimary} onClick={saveCheckin}>Save today's check-in</button>
+      {checkinMsg && <div style={S.msg}>{checkinMsg}</div>}
+      <div style={{...S.sectionLabel, marginTop:22}}>This week</div>
+      <div style={S.weekDots}>
+        {wkeys.map((k,i)=>{
+          const done=weekData[k]&&weekData[k].length>0; const isToday=k===todayKey();
+          return <div key={k} style={S.wdot(done,isToday)}><span style={{fontSize:12,fontWeight:500}}>{DAYS[i]}</span><span style={{fontSize:10}}>{done?"✓":"—"}</span></div>;
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════
+// TAB: JOURNAL
+// ══════════════════════════════════════════
+function TabJournal() {
+  const key = todayKey();
+  const saved = load("frt_journal_"+key, {});
+  const [morning, setMorning] = useState(saved.morning||"");
+  const [evening, setEvening] = useState(saved.evening||"");
+  const [gratitude, setGratitude] = useState(saved.gratitude||"");
+  const [tomorrow, setTomorrow] = useState(saved.tomorrow||"");
+  const [msg, setMsg] = useState("");
+  function saveJ() {
+    const entry={date:key,morning,evening,gratitude,tomorrow};
+    save("frt_journal_"+key, entry);
+    const journals=load("frt_journals",[]);
+    const idx=journals.findIndex(j=>j.date===key);
+    if(idx>=0)journals[idx]=entry;else journals.unshift(entry);
+    save("frt_journals", journals.slice(0,60));
+    setMsg("Journal saved."); setTimeout(()=>setMsg(""),2500);
+  }
+  return (
+    <div style={S.pad}>
+      <div style={{...S.verseCard, marginBottom:20}}><div style={{...S.verseText,fontSize:14,fontStyle:"normal",color:"#6b5f52"}}>"Write it down — what is written becomes what is remembered."</div></div>
+      {[["☀ Morning intention","Lord, today I want to walk in...",morning,setMorning,3],["🌙 Evening reflection","Today I struggled with... but I experienced...",evening,setEvening,3],["★ Three things I'm grateful for","1. \n2. \n3. ",gratitude,setGratitude,3],["→ Tomorrow's intention","Tomorrow I will...",tomorrow,setTomorrow,2]].map(([lbl,ph,val,set,rows])=>(
+        <div key={lbl} style={S.field}>
+          <label style={S.fieldLabel}>{lbl}</label>
+          <textarea style={S.textarea} rows={rows} placeholder={ph} value={val} onChange={e=>set(e.target.value)}/>
+        </div>
+      ))}
+      <button style={S.btnPrimary} onClick={saveJ}>Save entry</button>
+      {msg && <div style={S.msg}>{msg}</div>}
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════
+// TAB: PRAYER
+// ══════════════════════════════════════════
+function TabPrayer({checked, profile}) {
+  const [selected, setSelected] = useState(checked.map(i=>FRUITS[i].name));
+  const [intention, setIntention] = useState("");
+  const [prayerText, setPrayerText] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [saved, setSaved] = useState(load("frt_prayers",[]));
+  const [saveMsg, setSaveMsg] = useState("");
+
+  function toggleSel(name) { setSelected(s=>s.includes(name)?s.filter(x=>x!==name):[...s,name]); }
+
+  async function build() {
+    const fruits = selected.length>0?selected:["love","faithfulness","peace"];
+    setLoading(true); setPrayerText("");
+    const prompt = `Write a heartfelt, personal Christian prayer (150–180 words) for ${profile?.name||"a believer"}, focusing on these fruits of the Spirit: ${fruits.join(", ")}. Their intention: "${intention||"to walk more closely with God today"}".
+
+Guidelines:
+- Ground every fruit mentioned in an accurate NKJV scripture reference
+- The prayer should invite and yield to the Holy Spirit, not replace Him — make this explicit
+- Begin with "Father," or "Lord," — first-person, intimate and honest
+- Reference the specific fruits naturally with their scriptural grounding
+- Include a moment of surrender to the Holy Spirit's guidance
+- End with Amen.
+- Do NOT invent or paraphrase scripture — only use accurate NKJV text`;
+    try {
+      const r = await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:prompt}]})});
+      const d = await r.json();
+      setPrayerText(d.content.filter(b=>b.type==="text").map(b=>b.text).join(""));
+    } catch { setPrayerText("Could not generate prayer right now. Please try again."); }
+    setLoading(false);
+  }
+
+  function savePrayer() {
+    const updated = [{text:prayerText,date:new Date().toISOString()},...saved].slice(0,20);
+    setSaved(updated); save("frt_prayers", updated);
+    setSaveMsg("Saved!"); setTimeout(()=>setSaveMsg(""),2000);
+  }
+
+  return (
+    <div style={S.pad}>
+      <div style={S.verseCard}><div style={S.verseText}>"Do not be anxious about anything, but in every situation, by prayer and petition, with thanksgiving, present your requests to God."</div><div style={S.verseRef}>— Philippians 4:6</div></div>
+      <div style={S.sectionLabel}>Fruits to include</div>
+      <div style={S.fruitsGrid}>
+        {FRUITS.map((f,i)=>{const on=selected.includes(f.name);return(
+          <div key={i} style={S.fruitCard(on,false)} onClick={()=>toggleSel(f.name)}>
+            <FruitIcon name={f.icon} size={26} color={on ? "#6b8f71" : "#c8bdb0"}/>
+            <div style={S.fcName(on,false)}>{f.name}</div>
+          </div>
+        );})}
+      </div>
+      <div style={S.field}>
+        <label style={S.fieldLabel}>Your intention</label>
+        <textarea style={S.textarea} rows={2} placeholder="e.g. 'Help me be gentler with my words'" value={intention} onChange={e=>setIntention(e.target.value)}/>
+      </div>
+      <button style={S.btnPrimary} onClick={build}>Build my prayer</button>
+      {loading && <Dots/>}
+      {prayerText && !loading && (
+        <div>
+          <div style={{background:"#fff",border:"1px solid rgba(42,37,32,.08)",borderRadius:14,padding:"22px 20px",fontFamily:"Georgia, serif",fontSize:16,fontWeight:300,lineHeight:1.9,color:"#2a2520",whiteSpace:"pre-wrap",marginTop:16}}>{prayerText}</div>
+          <button style={{...S.btnSecondary,marginTop:10}} onClick={savePrayer}>🔖 Save this prayer {saveMsg && `— ${saveMsg}`}</button>
+        </div>
+      )}
+      <div style={{background:"#f0ece4",borderRadius:9,padding:"12px 16px",marginTop:16}}>
+        <div style={{fontSize:11,color:"#a8998a",lineHeight:1.7,textAlign:"center",fontFamily:"Georgia,serif",fontStyle:"italic"}}>"Likewise the Spirit also helps in our weaknesses. For we do not know what we should pray for as we ought, but the Spirit Himself makes intercession for us." — Romans 8:26 (NKJV)</div>
+      </div>
+      {saved.length>0 && (
+        <div style={{marginTop:20}}>
+          <div style={S.sectionLabel}>Saved prayers</div>
+          {saved.slice(0,3).map((p,i)=>(
+            <div key={i} style={{...S.card,marginBottom:10}}>
+              <div style={{fontSize:11,color:"#a8998a",marginBottom:8}}>{new Date(p.date).toLocaleDateString("en-CA",{weekday:"short",month:"short",day:"numeric"})}</div>
+              <div style={{fontFamily:"Georgia, serif",fontSize:13,color:"#6b5f52",lineHeight:1.7}}>{p.text.slice(0,130)}…</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════
+// TAB: DISCERN
+// ══════════════════════════════════════════
+function TabDiscern({people,setPeople,setModal}) {
+  return (
+    <div style={S.pad}>
+      <div style={S.verseCard}><div style={S.verseText}>"By their fruits you will recognise them."</div><div style={S.verseRef}>— Matthew 7:16</div></div>
+      <div style={S.sectionLabel}>Relationship discernment</div>
+      <p style={{fontSize:13,color:"#6b5f52",lineHeight:1.7,marginBottom:12}}>Prayerfully observe the fruits of the Spirit in people who matter to you — prospective partners, close friends, or anyone you're discerning. Private, stays on your device.</p>
+      <div style={{background:"#f5ecd8",border:"1px solid #dfc07a",borderRadius:9,padding:"10px 14px",marginBottom:18}}>
+        <div style={{fontFamily:"Georgia,serif",fontSize:12,fontStyle:"italic",color:"#7a5a1e",lineHeight:1.7}}>"You will know them by their fruits." — Matthew 7:16 (NKJV) · This tool is a guide, not a verdict. Only the Holy Spirit gives true discernment.</div>
+      </div>
+      <button style={{...S.btnPrimary,marginBottom:20}} onClick={()=>setModal({type:"add-person"})}>+ Add a person to discern</button>
+      {people.length===0 && <div style={{textAlign:"center",fontSize:13,color:"#c8bdb0",padding:"20px 0"}}>No people added yet. This space is private and prayerful.</div>}
+      {people.map((p,idx)=>(
+        <div key={idx} style={S.personCard} onClick={()=>setModal({type:"person",person:p,idx})}>
+          <div style={S.personAv}>{initials(p.name)}</div>
+          <div style={{flex:1}}>
+            <div style={{fontFamily:"Georgia, serif",fontSize:17,color:"#2a2520"}}>{p.name}</div>
+            <div style={{fontSize:12,color:"#a8998a",marginTop:2}}>{p.relation||"Contact"} · Added {new Date(p.added).toLocaleDateString("en-CA",{month:"short",day:"numeric"})}</div>
+          </div>
+          <span style={{color:"#c8bdb0",fontSize:16}}>›</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════
+// TAB: COMMUNITY
+// ══════════════════════════════════════════
+function TabCommunity({groups,setGroups,feeds,setFeeds,profile,setModal,postToGroups}) {
+  const [activeId, setActiveId] = useState(groups[0]?.id||"");
+  const [commTab, setCommTab] = useState("feed");
+  const group = groups.find(g=>g.id===activeId)||groups[0];
+
+  function sendNudge(msg) {
+    if(!group) return;
+    const p = profile||{name:"You"};
+    const q = NUDGES[Math.floor(Math.random()*NUDGES.length)].q;
+    const body = `Sent a nudge: "${q}"${msg?` — "${msg}"`:""}`;
+    const feed = feeds[group.id]||[];
+    const newFeed = [{userId:"me",userName:p.name,type:"nudge",body,fruits:[],at:new Date().toISOString()},...feed].slice(0,50);
+    setFeeds(f=>({...f,[group.id]:newFeed})); save("frt_feed_"+group.id, newFeed);
+  }
+
+  function encourage(groupId, toName) {
+    const p = profile||{name:"You"};
+    const msgs = [`Encouraged ${toName} — keep walking in the Spirit!`,`Sent love to ${toName}.`,`Cheered on ${toName}'s faithfulness.`];
+    const body = msgs[Math.floor(Math.random()*msgs.length)];
+    const feed = feeds[groupId]||[];
+    const newFeed = [{userId:"me",userName:p.name,type:"encouragement",body,fruits:[],at:new Date().toISOString()},...feed].slice(0,50);
+    setFeeds(f=>({...f,[groupId]:newFeed})); save("frt_feed_"+groupId, newFeed);
+  }
+
+  return (
+    <div style={S.pad}>
+      {groups.length>0 && group ? (
+        <>
+          {groups.length>1 && (
+            <div style={{display:"flex",gap:6,marginBottom:16,overflowX:"auto",paddingBottom:4}}>
+              {groups.map(g=>(
+                <button key={g.id} style={{...S.pillTab(g.id===activeId),flexShrink:0}} onClick={()=>{setActiveId(g.id);setCommTab("feed");}}>{g.name}</button>
+              ))}
+            </div>
+          )}
+          <div style={{...S.card,cursor:"default",marginBottom:16}}>
+            <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:6}}>
+              <div style={{fontFamily:"Georgia, serif",fontSize:18,color:"#2a2520"}}>{group.name}</div>
+              <span style={{fontFamily:"monospace",background:"#f5ecd8",border:"1px solid #dfc07a",borderRadius:6,padding:"2px 8px",fontSize:12,color:"#b8913a",letterSpacing:".12em"}}>{group.code}</span>
+            </div>
+            <div style={{fontSize:12,color:"#a8998a"}}>{group.members.length} member{group.members.length!==1?"s":""} · {group.isOwner?"You created this":"Joined"}</div>
+            <div style={{display:"flex",marginTop:12}}>
+              {group.members.slice(0,5).map((m,i)=>(
+                <div key={i} style={{width:28,height:28,borderRadius:"50%",background:"#e8f0e9",border:"2px solid #fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:500,color:"#4a6b50",marginRight:-6}}>{initials(m.name)}</div>
+              ))}
+            </div>
+            {group.isOwner && <button style={{...S.btnGhost,marginTop:12,fontSize:12,padding:"7px 12px"}} onClick={()=>setModal({type:"invite",group})}>+ Invite members</button>}
+          </div>
+          <div style={S.pillTabs}>
+            {["feed","nudge","members"].map(t=>(
+              <button key={t} style={S.pillTab(commTab===t)} onClick={()=>setCommTab(t)}>{t==="feed"?"Feed":t==="nudge"?"Send nudge":"Members"}</button>
+            ))}
+          </div>
+          {commTab==="feed" && <FeedList feed={feeds[group.id]||[]} onEncourage={name=>encourage(group.id,name)}/>}
+          {commTab==="nudge" && <NudgeForm onSend={sendNudge}/>}
+          {commTab==="members" && (
+            <div>{group.members.map((m,i)=>(
+              <div key={i} style={{...S.card,display:"flex",alignItems:"center",gap:12,padding:"12px 14px"}}>
+                <div style={{width:36,height:36,borderRadius:"50%",background:"#e8f0e9",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:"#4a6b50"}}>{initials(m.name)}</div>
+                <div style={{flex:1}}><div style={{fontSize:13,fontWeight:500,color:"#2a2520"}}>{m.name}{m.isMe?" (you)":""}</div><div style={{fontSize:11,color:"#a8998a"}}>{m.streak||0} day streak</div></div>
+              </div>
+            ))}</div>
+          )}
+        </>
+      ) : (
+        <div style={{textAlign:"center",padding:"40px 0 24px"}}>
+          <div style={{fontFamily:"Georgia, serif",fontSize:28,fontWeight:300,color:"#2a2520",marginBottom:8}}>Grow together</div>
+          <div style={{fontSize:14,color:"#6b5f52",lineHeight:1.75,marginBottom:32}}>Accountability is stronger in community. Create a group or join one with an invite code.</div>
+        </div>
+      )}
+      <div style={{marginTop: groups.length>0?24:0}}>
+        <div style={S.sectionLabel}>Groups</div>
+        <button style={{...S.btnPrimary,marginBottom:10}} onClick={()=>setModal({type:"create-group"})}>+ Create a new group</button>
+        <button style={S.btnSecondary} onClick={()=>setModal({type:"join-group"})}>Join with invite code</button>
+      </div>
+    </div>
+  );
+}
+
+function FeedList({feed,onEncourage}) {
+  if(!feed.length) return <div style={{textAlign:"center",fontSize:13,color:"#c8bdb0",padding:20}}>No activity yet — check in today to start the feed!</div>;
+  function ago(s){const m=Math.floor((Date.now()-new Date(s))/60000);if(m<1)return"just now";if(m<60)return m+"m ago";const h=Math.floor(m/60);if(h<24)return h+"h ago";return Math.floor(h/24)+"d ago";}
+  return <div>{feed.slice(0,15).map((item,i)=>(
+    <div key={i} style={S.feedItem(item.type==="nudge")}>
+      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
+        <div style={{width:32,height:32,borderRadius:"50%",background:"#e8f0e9",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#4a6b50",flexShrink:0}}>{initials(item.userName)}</div>
+        <div style={{flex:1}}><div style={{fontSize:13,fontWeight:500,color:"#2a2520"}}>{item.userId==="me"?"You":item.userName}</div><div style={{fontSize:11,color:"#c8bdb0"}}>{ago(item.at)}</div></div>
+        <span style={{fontSize:14,color:item.type==="nudge"?"#b8913a":"#6b8f71"}}>{item.type==="nudge"?"🔔":"✦"}</span>
+      </div>
+      <div style={{fontSize:13,color:"#6b5f52",lineHeight:1.6}}>{item.body}</div>
+      {item.fruits?.length>0 && <div style={{display:"flex",flexWrap:"wrap",gap:5,marginTop:8}}>{item.fruits.map(f=><span key={f} style={{background:"#e8f0e9",border:"1px solid #b8d0bb",borderRadius:20,padding:"3px 10px",fontSize:11,color:"#4a6b50"}}>{f}</span>)}</div>}
+      {item.userId!=="me" && <button style={{...S.btnGhost,marginTop:10,fontSize:12,padding:"6px 12px",width:"auto"}} onClick={()=>onEncourage(item.userName)}>♥ Encourage</button>}
+    </div>
+  ))}</div>;
+}
+
+function NudgeForm({onSend}) {
+  const [msg, setMsg] = useState(""); const [sent, setSent] = useState(false);
+  return (
+    <div>
+      <div style={{background:"#f5ecd8",border:"1px solid #dfc07a",borderRadius:10,padding:"14px 16px",marginBottom:16}}>
+        <div style={{fontSize:14,fontWeight:500,color:"#b8913a",marginBottom:4}}>Send an accountability nudge</div>
+        <div style={{fontSize:13,color:"#6b5f52",lineHeight:1.6}}>A nudge prompts your group to pause and reflect. It's care, not surveillance.</div>
+      </div>
+      <div style={S.field}><label style={S.fieldLabel}>Personal message (optional)</label>
+        <textarea style={S.textarea} rows={2} placeholder="e.g. 'Praying for everyone — how are you walking in peace?'" value={msg} onChange={e=>setMsg(e.target.value)}/></div>
+      <button style={S.btnPrimary} onClick={()=>{onSend(msg);setSent(true);setTimeout(()=>setSent(false),2500);}}>Send nudge to group</button>
+      {sent && <div style={S.msg}>Nudge sent!</div>}
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════
+// TAB: HARVEST
+// ══════════════════════════════════════════
+function TabHarvest({streak,total,wkFruits,fc,weekFocus,focusIdx,profile}) {
+  const [report, setReport] = useState(""); const [loading, setLoading] = useState(false);
+  async function build() {
+    setLoading(true); setReport("");
+    const summary = FRUITS.map((f,i)=>`${f.name}: ${fc[i]||0} days`).join(", ");
+    const top = FRUITS.filter((_,i)=>fc[i]>=3).map(f=>f.name);
+    const growth = FRUITS.filter((_,i)=>(fc[i]||0)<=1).map(f=>f.name);
+    const prompt = `Generate a warm, scripturally-grounded monthly spiritual harvest report for ${profile?.name||"a believer"} who has been tracking the fruits of the Spirit. This week's focus fruit: ${weekFocus}. Data: ${summary}. Strongest fruits (practised 3+ days): ${top.join(", ")||"still building consistency"}. Growth areas (0–1 days): ${growth.join(", ")||"doing well across the board"}. Total check-in days: ${total}.
+
+Write in 3 sections:
+1. "Your harvest" — celebrate their specific strengths warmly, naming the fruits
+2. "Seeds still growing" — gentle, non-shaming encouragement, include ONE accurate NKJV scripture
+3. "A word for the season ahead" — a closing challenge that points them toward the Holy Spirit
+
+Important guidelines:
+- Use NKJV translation for all scripture quotes
+- Only quote scripture accurately — never paraphrase or invent references
+- The tone should point the reader toward the Holy Spirit as the source of these fruits, not their own effort
+- Be warm, pastoral, and faith-filled. About 200 words.
+- Address ${profile?.name||"the reader"} by name once.`;
+    try {
+      const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1200,messages:[{role:"user",content:prompt}]})});
+      const d=await r.json();
+      setReport(d.content.filter(b=>b.type==="text").map(b=>b.text).join(""));
+    } catch { setReport("Could not generate report right now. Please try again."); }
+    setLoading(false);
+  }
+  return (
+    <div style={S.pad}>
+      <div style={S.statRow}>
+        {[["Streak",streak,"days"],["This week",wkFruits,"fruits"],["Total",total,"days"]].map(([l,v,s])=>(
+          <div key={l} style={S.statBox}><div style={S.statVal}>{v}</div><div style={S.statLbl}>{l}</div></div>
+        ))}
+      </div>
+      <div style={S.sectionLabel}>Fruit progress — this week</div>
+      {FRUITS.map((f,i)=>{const c=fc[i]||0;const pct=Math.round((c/7)*100);const isFocus=f.name===weekFocus;return(
+        <div key={i} style={S.barRow}>
+          <span style={{fontSize:12,color:"#6b5f52",width:86,flexShrink:0}}>{f.name}{isFocus?" ✦":""}</span>
+          <div style={S.barTrack}><div style={S.barFill(pct,isFocus)}/></div>
+          <span style={{fontSize:11,color:"#a8998a",width:24,textAlign:"right"}}>{c}/7</span>
+        </div>
+      );})}
+      <div style={{marginTop:26}}>
+        <div style={S.sectionLabel}>Monthly harvest report</div>
+        <p style={{fontSize:13,color:"#6b5f52",marginBottom:10,lineHeight:1.65}}>A personal summary of your spiritual growth — strengths, seeds still growing, and a word for the season ahead.</p>
+        <div style={{background:"#e8f0e9",borderRadius:9,padding:"10px 14px",marginBottom:14}}>
+          <div style={{fontFamily:"Georgia,serif",fontSize:12,fontStyle:"italic",color:"#2d5a35",lineHeight:1.7}}>"He who has begun a good work in you will complete it until the day of Jesus Christ." — Philippians 1:6 (NKJV)</div>
+        </div>
+        <button style={S.btnPrimary} onClick={build}>Generate my harvest report</button>
+      </div>
+      {loading && <Dots/>}
+      {report && !loading && <div style={{background:"#fff",border:"1px solid rgba(42,37,32,.08)",borderRadius:14,padding:20,fontSize:14,lineHeight:1.8,color:"#2a2520",whiteSpace:"pre-wrap",marginTop:16}}>{report}</div>}
+      <div style={{marginTop:28}}>
+        <div style={S.sectionLabel}>Reflect</div>
+        {REFLECT.map((p,i)=>(
+          <ReflectCard key={i} prompt={p}/>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ReflectCard({prompt}) {
+  const [open, setOpen] = useState(false); const [text, setText] = useState(""); const [loading, setLoading] = useState(false);
+  async function goDeeper() {
+    setOpen(true); setLoading(true); setText("");
+    try {
+      const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:800,messages:[{role:"user",content:`A believer is reflecting on: "${prompt.q}"\n\nProvide:\n1. Three thought-provoking follow-up questions to go deeper\n2. One NKJV scripture — quoted accurately in full — that speaks to this reflection\n3. One sentence pointing them toward the Holy Spirit as their guide\n\nOnly quote accurate NKJV scripture. Be warm and spiritually grounded.`}]})});
+      const d=await r.json();
+      setText(d.content.filter(b=>b.type==="text").map(b=>b.text).join(""));
+    } catch { setText("Could not load. Try again."); }
+    setLoading(false);
+  }
+  return (
+    <div style={S.reflectCard}>
+      <div style={{fontFamily:"Georgia, serif",fontSize:15,fontStyle:"italic",color:"#2a2520",lineHeight:1.65,marginBottom:12}}>"{prompt.q}"</div>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        <span style={{fontSize:10,fontWeight:500,color:"#a8998a",background:"#f0ece4",borderRadius:20,padding:"3px 10px",textTransform:"uppercase",letterSpacing:".06em"}}>{prompt.tag}</span>
+        <button style={{background:"none",border:"none",fontSize:12,color:"#6b8f71",cursor:"pointer",fontFamily:"Georgia, serif"}} onClick={goDeeper}>Go deeper →</button>
+      </div>
+      {open && (loading ? <Dots/> : <div style={{fontSize:13,color:"#2a2520",lineHeight:1.8,marginTop:14,whiteSpace:"pre-wrap"}}>{text}</div>)}
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════
+// TAB: SETTINGS
+// ══════════════════════════════════════════
+function TabSettings({profile,setProfile,nudgeEnabled,setNudgeEnabled,weekFocus,setFocusFruit}) {
+  const [name, setName] = useState(profile?.name||"");
+  const [msg, setMsg] = useState("");
+  function save_() { setProfile({...profile,name:name.trim()||profile?.name}); setMsg("Saved."); setTimeout(()=>setMsg(""),2000); }
+  return (
+    <div style={S.pad}>
+      <div style={{marginBottom:24}}>
+        <div style={S.sectionLabel}>Profile</div>
+        <div style={{...S.card}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 0"}}>
+            <div style={{fontSize:14,color:"#2a2520"}}>Your name</div>
+            <input style={{background:"#f7f4ef",border:"1px solid rgba(42,37,32,.14)",borderRadius:8,padding:"7px 12px",color:"#2a2520",fontFamily:"Georgia, serif",fontSize:14,textAlign:"right",width:140,outline:"none"}} value={name} onChange={e=>setName(e.target.value)}/>
+          </div>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 0",borderTop:"1px solid rgba(42,37,32,.07)"}}>
+            <div style={{fontSize:14,color:"#2a2520"}}>Focus fruit this week</div>
+            <select style={{background:"#f7f4ef",border:"1px solid rgba(42,37,32,.14)",borderRadius:8,padding:"7px 10px",color:"#2a2520",fontFamily:"Georgia, serif",fontSize:13,outline:"none",WebkitAppearance:"none",width:140}} value={weekFocus} onChange={e=>setFocusFruit(e.target.value)}>
+              {FRUITS.map(f=><option key={f.name}>{f.name}</option>)}
+            </select>
+          </div>
+          <button style={{...S.btnSecondary,marginTop:12}} onClick={save_}>Save profile</button>
+          {msg && <div style={S.msg}>{msg}</div>}
+        </div>
+      </div>
+      <div style={{marginBottom:24}}>
+        <div style={S.sectionLabel}>Accountability nudges</div>
+        <div style={{...S.card}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+            <div><div style={{fontSize:14,color:"#2a2520"}}>Random check-in moments</div><div style={{fontSize:12,color:"#a8998a",marginTop:2}}>Prompts throughout the day</div></div>
+            <div style={S.toggle(nudgeEnabled)} onClick={()=>setNudgeEnabled(!nudgeEnabled)}><div style={S.toggleKnob(nudgeEnabled)}/></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div style={S.sectionLabel}>How to install on your phone</div>
+        <div style={{...S.card,fontSize:13,color:"#6b5f52",lineHeight:1.75}}>
+          <div style={{marginBottom:10}}><strong style={{color:"#2a2520"}}>iPhone:</strong> Open in Safari → tap the Share icon → "Add to Home Screen" → it opens full-screen like a native app.</div>
+          <div><strong style={{color:"#2a2520"}}>Android:</strong> Open in Chrome → tap the three-dot menu → "Add to Home Screen" or "Install app".</div>
+        </div>
+      </div>
+
+      {/* Copyright & Terms */}
+      <div style={{marginTop:32,paddingTop:24,borderTop:"1px solid rgba(42,37,32,.08)",textAlign:"center"}}>
+        <div style={{display:"flex",justifyContent:"center",marginBottom:12}}>
+          <LogoMark size={26} color="#b8d0bb"/>
+        </div>
+        <div style={{fontFamily:"Georgia,serif",fontSize:13,color:"#6b5f52",lineHeight:1.9}}>
+          © 2025 <strong>Fruitful</strong>. All rights reserved.
+        </div>
+        <div style={{fontFamily:"Georgia,serif",fontSize:12,color:"#a8998a",marginTop:4,lineHeight:1.7}}>
+          Created by Eri-Oluwa Eunice Oyeniyi
+        </div>
+        <div style={{background:"#f0ece4",borderRadius:9,padding:"12px 16px",marginTop:16,marginBottom:4}}>
+          <div style={{fontFamily:"Georgia,serif",fontSize:11,fontStyle:"italic",color:"#a8998a",lineHeight:1.8}}>
+            This app is currently in beta testing. All content, design, branding,
+            and concept are the intellectual property of the creator and are
+            protected under applicable copyright law. Unauthorised reproduction,
+            distribution, or use of any part of this app is strictly prohibited.
+          </div>
+        </div>
+        <div style={{fontSize:10,color:"#c8bdb0",marginTop:8,letterSpacing:".06em",fontFamily:"Georgia,serif"}}>
+          Version 0.1 · Beta
+        </div>
+        <div style={{fontSize:10,color:"#c8bdb0",marginTop:6,letterSpacing:".08em",textTransform:"uppercase",fontFamily:"Georgia,serif"}}>
+          Built on Galatians 5:22–23 (NKJV)
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════
+// MODALS
+// ══════════════════════════════════════════
+function FocusModal({current,setFocusFruit,onClose,fc}) {
+  const sorted = [...FRUITS.keys()].sort((a,b)=>(fc[a]||0)-(fc[b]||0));
+  const suggested = FRUITS[sorted[0]]?.name;
+  const [sel, setSel] = useState(current);
+  return (
+    <div style={S.modal} onClick={onClose}>
+      <div style={S.modalBox} onClick={e=>e.stopPropagation()}>
+        <div style={{fontFamily:"Georgia, serif",fontSize:22,fontWeight:300,color:"#2a2520",marginBottom:12}}>This week's focus fruit</div>
+        <p style={{fontSize:13,color:"#6b5f52",marginBottom:16,lineHeight:1.6}}>App suggests <strong>{suggested}</strong> based on your patterns. You can choose any fruit.</p>
+        <div style={S.fruitsGrid}>
+          {FRUITS.map((f,i)=>{const on=sel===f.name;return(
+            <div key={i} style={S.fruitCard(on,false)} onClick={()=>setSel(f.name)}>
+              <FruitIcon name={f.icon} size={26} color={on ? "#6b8f71" : "#c8bdb0"}/>
+              <div style={S.fcName(on,false)}>{f.name}</div>
+            </div>
+          );})}
+        </div>
+        <button style={S.btnPrimary} onClick={()=>{setFocusFruit(sel);onClose();}}>Set this week's focus</button>
+        <button style={{...S.btnGhost,width:"100%",marginTop:8}} onClick={onClose}>Cancel</button>
+      </div>
+    </div>
+  );
+}
+
+function AddPersonModal({onClose,onAdd}) {
+  const [name,setName]=useState(""); const [relation,setRelation]=useState(""); const [notes,setNotes]=useState("");
+  return (
+    <div style={S.modal} onClick={onClose}>
+      <div style={S.modalBox} onClick={e=>e.stopPropagation()}>
+        <div style={{fontFamily:"Georgia, serif",fontSize:22,fontWeight:300,color:"#2a2520",marginBottom:16}}>Add a person</div>
+        {[["Name","e.g. Michael",name,setName,"text",40],["Relationship / context","e.g. Prospective partner",relation,setRelation,"text",60]].map(([lbl,ph,val,set,type,max])=>(
+          <div key={lbl} style={S.field}><label style={S.fieldLabel}>{lbl}</label><input style={S.input} type={type} placeholder={ph} value={val} onChange={e=>set(e.target.value)} maxLength={max}/></div>
+        ))}
+        <div style={S.field}><label style={S.fieldLabel}>Initial observations (optional)</label><textarea style={S.textarea} rows={3} placeholder="What have you noticed so far?" value={notes} onChange={e=>setNotes(e.target.value)}/></div>
+        <div style={{display:"flex",gap:10}}>
+          <button style={{...S.btnGhost,flex:1}} onClick={onClose}>Cancel</button>
+          <button style={{...S.btnPrimary,flex:1}} onClick={()=>{if(!name.trim())return;onAdd({name:name.trim(),relation,notes,added:new Date().toISOString(),assessments:{},journal:""});}}>Add</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PersonModal({person,idx,people,setPeople,onClose}) {
+  const [ptab,setPtab]=useState("assess");
+  const [assessments,setAssessments]=useState(person.assessments||{});
+  const [journal,setJournal]=useState(person.journal||"");
+  const [aiText,setAiText]=useState(""); const [aiLoading,setAiLoading]=useState(false);
+  const [jmsg,setJmsg]=useState("");
+
+  function saveAssess(fruitName,qi,type) {
+    const updated={...assessments,[fruitName]:{...(assessments[fruitName]||{}),[qi]:type}};
+    setAssessments(updated);
+    const updPeople=people.map((p,i)=>i===idx?{...p,assessments:updated}:p);
+    setPeople(updPeople);
+  }
+
+  function saveJournal() {
+    const updPeople=people.map((p,i)=>i===idx?{...p,journal}:p);
+    setPeople(updPeople); setJmsg("Saved."); setTimeout(()=>setJmsg(""),2000);
+  }
+
+  function removePerson() {
+    if(!confirm(`Remove ${person.name} from discernment?`)) return;
+    setPeople(people.filter((_,i)=>i!==idx)); onClose();
+  }
+
+  async function buildAI() {
+    setAiLoading(true); setAiText("");
+    const greens=[]; const concerns=[];
+    FRUITS.forEach(f=>{
+      (DISCERN_Q[f.name]||[]).forEach((q,qi)=>{
+        const ans=(assessments[f.name]||{})[qi];
+        if(ans==="green") greens.push(`${f.name}: ${q.g}`);
+        if(ans==="concern") concerns.push(`${f.name}: ${q.c}`);
+      });
+    });
+    if(!greens.length&&!concerns.length){setAiText("Complete some of the assessment first.");setAiLoading(false);return;}
+    const prompt=`You are a wise, warm, biblically-grounded pastoral advisor speaking to a believer who is prayerfully discerning a relationship with ${person.name} (${person.relation||"a contact"}).
+
+GREEN FLAGS observed: ${greens.join("; ")||"None recorded yet"}
+CONCERNS observed: ${concerns.join("; ")||"None recorded yet"}
+${journal?`Their personal notes: "${journal.slice(0,300)}"`:``}
+
+Provide a response structured as:
+1. A brief, honest reflection on the overall spiritual picture (2–3 sentences)
+2. The most significant green flag and why it matters biblically
+3. The most significant concern and a specific prayer direction
+4. One NKJV scripture that speaks to their situation — quote it accurately and in full
+5. A gentle closing reminder to yield this discernment to the Holy Spirit
+
+Critical guidelines:
+- Only quote NKJV scripture — never paraphrase or invent references
+- Be balanced, non-prescriptive — the Holy Spirit is the true Counsellor, not you
+- Never tell them what decision to make — only help them see clearly and pray wisely
+- Warm, pastorally grounded tone. About 200 words.`;
+    try {
+      const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1200,messages:[{role:"user",content:prompt}]})});
+      const d=await r.json();
+      setAiText(d.content.filter(b=>b.type==="text").map(b=>b.text).join(""));
+    } catch { setAiText("Could not load reflection right now."); }
+    setAiLoading(false);
+  }
+
+  const greens=[]; const concerns=[];
+  FRUITS.forEach(f=>{(DISCERN_Q[f.name]||[]).forEach((q,qi)=>{const ans=(assessments[f.name]||{})[qi];if(ans==="green")greens.push({fruit:f.name,label:q.g});if(ans==="concern")concerns.push({fruit:f.name,label:q.c});});});
+
+  return (
+    <div style={S.modal} onClick={onClose}>
+      <div style={S.modalBox} onClick={e=>e.stopPropagation()}>
+        <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:20}}>
+          <div style={{...S.personAv,width:50,height:50,fontSize:18}}>{initials(person.name)}</div>
+          <div><div style={{fontFamily:"Georgia, serif",fontSize:22,fontWeight:300,color:"#2a2520"}}>{person.name}</div><div style={{fontSize:12,color:"#a8998a"}}>{person.relation||"Contact"}</div></div>
+        </div>
+        <div style={S.pillTabs}>
+          {["assess","flags","journal","ai"].map(t=><button key={t} style={S.pillTab(ptab===t)} onClick={()=>setPtab(t)}>{t==="assess"?"Assessment":t==="flags"?"Flags":t==="journal"?"Journal":"AI reflection"}</button>)}
+        </div>
+
+        {ptab==="assess" && (
+          <div>
+            <p style={{fontSize:13,color:"#6b5f52",lineHeight:1.65,marginBottom:16}}>Work through each fruit to reflect on patterns you've observed.</p>
+            {FRUITS.map(f=>{
+              const qs=DISCERN_Q[f.name]||[]; const ans=assessments[f.name]||{};
+              const answered=Object.keys(ans).length;
+              return <div key={f.name} style={{...S.card,marginBottom:8,cursor:"pointer"}} onClick={()=>{}}>
+                <div style={{fontFamily:"Georgia, serif",fontSize:15,color:"#2a2520",marginBottom:10}}>{f.icon} {f.name}</div>
+                {qs.map((q,qi)=>(
+                  <div key={qi} style={{marginBottom:12}}>
+                    <div style={{fontSize:13,color:"#6b5f52",fontStyle:"italic",marginBottom:8,lineHeight:1.5}}>{q.q}</div>
+                    <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                      <button style={{padding:"9px 12px",background:ans[qi]==="green"?"#e8f0e9":"#f7f4ef",border:`1px solid ${ans[qi]==="green"?"#6b8f71":"rgba(42,37,32,.1)"}`,borderRadius:8,fontSize:12,color:ans[qi]==="green"?"#4a6b50":"#6b5f52",cursor:"pointer",textAlign:"left",fontFamily:"Georgia, serif"}} onClick={()=>saveAssess(f.name,qi,"green")}>✓ {q.g}</button>
+                      <button style={{padding:"9px 12px",background:ans[qi]==="concern"?"#f5e8e8":"#f7f4ef",border:`1px solid ${ans[qi]==="concern"?"#b06060":"rgba(42,37,32,.1)"}`,borderRadius:8,fontSize:12,color:ans[qi]==="concern"?"#b06060":"#6b5f52",cursor:"pointer",textAlign:"left",fontFamily:"Georgia, serif"}} onClick={()=>saveAssess(f.name,qi,"concern")}>⚠ {q.c}</button>
+                    </div>
+                  </div>
+                ))}
+              </div>;
+            })}
+          </div>
+        )}
+
+        {ptab==="flags" && (
+          <div>
+            {!greens.length&&!concerns.length && <div style={{fontSize:13,color:"#c8bdb0",textAlign:"center",padding:20}}>Complete the assessment to see flags appear here.</div>}
+            {greens.length>0 && <>
+              <div style={{...S.sectionLabel,color:"#6b8f71"}}>Green flags ({greens.length})</div>
+              <div style={S.card}>{greens.map((g,i)=><div key={i} style={{...S.flagRow,borderBottom:i<greens.length-1?"1px solid rgba(42,37,32,.07)":"none"}}><div style={S.flagIcon(true)}>✓</div><div><div style={{fontSize:13,fontWeight:500,color:"#2a2520"}}>{g.fruit}</div><div style={{fontSize:12,color:"#6b5f52",lineHeight:1.5}}>{g.label}</div></div></div>)}</div>
+            </>}
+            {concerns.length>0 && <>
+              <div style={{...S.sectionLabel,color:"#b06060",marginTop:16}}>Areas of concern ({concerns.length})</div>
+              <div style={S.card}>{concerns.map((c,i)=><div key={i} style={{...S.flagRow,borderBottom:i<concerns.length-1?"1px solid rgba(42,37,32,.07)":"none"}}><div style={S.flagIcon(false)}>!</div><div><div style={{fontSize:13,fontWeight:500,color:"#2a2520"}}>{c.fruit}</div><div style={{fontSize:12,color:"#6b5f52",lineHeight:1.5}}>{c.label}</div></div></div>)}</div>
+            </>}
+          </div>
+        )}
+
+        {ptab==="journal" && (
+          <div>
+            <p style={{fontSize:13,color:"#6b5f52",lineHeight:1.65,marginBottom:14}}>Write freely about what you've observed, felt, or prayed regarding {person.name}. Private.</p>
+            <textarea style={{...S.textarea,minHeight:140}} value={journal} onChange={e=>setJournal(e.target.value)} placeholder="What have you noticed? What does your spirit say? What have you prayed?"/>
+            <button style={{...S.btnPrimary,marginTop:10}} onClick={saveJournal}>Save notes</button>
+            {jmsg && <div style={S.msg}>{jmsg}</div>}
+          </div>
+        )}
+
+        {ptab==="ai" && (
+          <div>
+            <button style={{...S.btnPrimary,marginBottom:12}} onClick={buildAI}>Get pastoral reflection</button>
+            {aiLoading && <Dots/>}
+            {aiText && !aiLoading && <div style={{fontFamily:"Georgia, serif",fontSize:14,fontWeight:300,lineHeight:1.85,color:"#2a2520",whiteSpace:"pre-wrap"}}>{aiText}</div>}
+          </div>
+        )}
+
+        <button style={{...S.btnGhost,width:"100%",marginTop:20,color:"#b06060",borderColor:"#f0c0c0"}} onClick={removePerson}>Remove {person.name}</button>
+        <button style={{...S.btnGhost,width:"100%",marginTop:8}} onClick={onClose}>Close</button>
+      </div>
+    </div>
+  );
+}
+
+function CreateGroupModal({profile,onClose,onCreated}) {
+  const [name,setName]=useState("");
+  function create() {
+    if(!name.trim()) return;
+    const code=genCode(); const id="g_"+Date.now();
+    const group={id,name:name.trim(),code,isOwner:true,created:new Date().toISOString(),members:[{name:profile?.name||"You",isMe:true,streak:load("frt_streak",0),joined:new Date().toISOString()}]};
+    onCreated(group,[]);
+  }
+  return (
+    <div style={S.modal} onClick={onClose}>
+      <div style={S.modalBox} onClick={e=>e.stopPropagation()}>
+        <div style={{fontFamily:"Georgia, serif",fontSize:22,fontWeight:300,color:"#2a2520",marginBottom:16}}>Create a group</div>
+        <div style={S.field}><label style={S.fieldLabel}>Group name</label><input style={S.input} placeholder="e.g. MAP Fellowship Accountability" value={name} onChange={e=>setName(e.target.value)} maxLength={50}/></div>
+        <div style={{display:"flex",gap:10}}>
+          <button style={{...S.btnGhost,flex:1}} onClick={onClose}>Cancel</button>
+          <button style={{...S.btnPrimary,flex:1}} onClick={create}>Create</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function JoinGroupModal({profile,onClose,onJoined}) {
+  const [code,setCode]=useState("");
+  function join() {
+    if(code.length<4) return;
+    const id="g_"+Date.now();
+    const group={id,name:"Accountability Group",code:code.toUpperCase(),isOwner:false,created:new Date().toISOString(),members:[{name:"Group Member",isMe:false,streak:5,joined:new Date(Date.now()-7*86400000).toISOString()},{name:profile?.name||"You",isMe:true,streak:load("frt_streak",0),joined:new Date().toISOString()}]};
+    const feed=[{userId:"u1",userName:"Group Member",type:"checkin",body:"Checked in — walked in patience and faithfulness today.",fruits:["Patience","Faithfulness"],at:new Date(Date.now()-3*3600000).toISOString()}];
+    onJoined(group,feed);
+  }
+  return (
+    <div style={S.modal} onClick={onClose}>
+      <div style={S.modalBox} onClick={e=>e.stopPropagation()}>
+        <div style={{fontFamily:"Georgia, serif",fontSize:22,fontWeight:300,color:"#2a2520",marginBottom:16}}>Join a group</div>
+        <div style={S.field}><label style={S.fieldLabel}>Invite code</label>
+          <input style={{...S.input,textTransform:"uppercase",letterSpacing:".18em",fontSize:22,textAlign:"center"}} placeholder="AB12CD" value={code} onChange={e=>setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,""))} maxLength={6}/></div>
+        <div style={{display:"flex",gap:10}}>
+          <button style={{...S.btnGhost,flex:1}} onClick={onClose}>Cancel</button>
+          <button style={{...S.btnPrimary,flex:1}} onClick={join}>Join</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function InviteModal({group,onClose}) {
+  const [copied,setCopied]=useState(false);
+  function copy() { navigator.clipboard?.writeText(group.code).then(()=>setCopied(true)).catch(()=>prompt("Copy this code:",group.code)); }
+  return (
+    <div style={S.modal} onClick={onClose}>
+      <div style={S.modalBox} onClick={e=>e.stopPropagation()}>
+        <div style={{fontFamily:"Georgia, serif",fontSize:22,fontWeight:300,color:"#2a2520",marginBottom:10}}>Invite to {group.name}</div>
+        <p style={{fontSize:14,color:"#6b5f52",marginBottom:8,lineHeight:1.6}}>Share this 6-character code with your accountability partners.</p>
+        <div style={S.inviteCode}>{group.code}</div>
+        <button style={S.btnPrimary} onClick={copy}>{copied?"✓ Copied!":"Copy invite code"}</button>
+        <button style={{...S.btnGhost,width:"100%",marginTop:8}} onClick={onClose}>Done</button>
+      </div>
+    </div>
+  );
+}
+
+function DeeperModal({q,onClose}) {
+  const [text,setText]=useState(""); const [loading,setLoading]=useState(true);
+  useEffect(()=>{
+    fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:800,messages:[{role:"user",content:`Reflection: "${q}" — Give 3 follow-up questions and one scripture. Warm, spiritually grounded.`}]})})
+      .then(r=>r.json()).then(d=>setText(d.content.filter(b=>b.type==="text").map(b=>b.text).join("")))
+      .catch(()=>setText("Could not load reflection."))
+      .finally(()=>setLoading(false));
+  },[]);
+  return (
+    <div style={S.modal} onClick={onClose}>
+      <div style={S.modalBox} onClick={e=>e.stopPropagation()}>
+        <div style={{fontFamily:"Georgia, serif",fontSize:18,fontStyle:"italic",color:"#6b5f52",marginBottom:16,lineHeight:1.6}}>"{q}"</div>
+        {loading?<Dots/>:<div style={{fontSize:14,color:"#2a2520",lineHeight:1.85,whiteSpace:"pre-wrap"}}>{text}</div>}
+        <button style={{...S.btnGhost,width:"100%",marginTop:16}} onClick={onClose}>Close</button>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
